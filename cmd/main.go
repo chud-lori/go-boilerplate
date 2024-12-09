@@ -2,13 +2,17 @@ package main
 
 import (
 	//"context"
+	"context"
 	"fmt"
+	"log"
 	"os"
+	"time"
 
 	//"log"
 	//"math/rand"
 	"boilerplate/adapters/controllers"
 	"boilerplate/adapters/repositories"
+	"boilerplate/adapters/utils"
 	"boilerplate/adapters/web"
 	"boilerplate/domain/services"
 	"boilerplate/infrastructure"
@@ -60,10 +64,22 @@ func main() {
 		Handler: handler,
 	}
 
-	fmt.Println("App running on port ", os.Getenv("APP_PORT"))
+	// Run server in a goroutine
+	go func() {
+		log.Printf("Server is running on port %s", os.Getenv("APP_PORT"))
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("HTTP server error: %v", err)
+		}
+	}()
 
-	err = server.ListenAndServe()
-	if err != nil {
-		panic(err)
-	}
+	wait := utils.GracefullShutdown(context.Background(), 5*time.Second, map[string]utils.Operation{
+		"database": func(ctx context.Context) error {
+			return postgredb.Close()
+		},
+		"http-server": func(ctx context.Context) error {
+			return server.Shutdown(ctx)
+		},
+	})
+
+	<-wait
 }
