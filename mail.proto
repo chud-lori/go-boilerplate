@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package mail;
+
+option go_package = "./mail_grpc";
+
+
+service Mail {
+    rpc SendMail (MailRequest) returns (MailReply) {}
+}
+
+message MailRequest {
+    string email = 1;
+    string message = 2;
+}
+
+message MailReply {
+    int32 status = 1;
+    string message = 2;
+}
+
