@@ -1,11 +1,12 @@
 package controllers
 
 import (
-	"boilerplate/adapters/transport"
-	"boilerplate/domain/ports"
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/chud-lori/go-boilerplate/adapters/transport"
+	"github.com/chud-lori/go-boilerplate/domain/ports"
 
 	"github.com/sirupsen/logrus"
 )

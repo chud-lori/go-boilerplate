@@ -1,4 +1,4 @@
-module boilerplate
+module github.com/chud-lori/go-boilerplate
 
 go 1.22.2
 

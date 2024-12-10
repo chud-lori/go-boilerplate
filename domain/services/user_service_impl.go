@@ -1,21 +1,19 @@
 package services
 
 import (
-	"boilerplate/adapters/transport"
-	"boilerplate/domain/entities"
-	"boilerplate/domain/ports"
 	"context"
 	"math/rand"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/sirupsen/logrus"
+	"github.com/chud-lori/go-boilerplate/adapters/transport"
+	"github.com/chud-lori/go-boilerplate/domain/entities"
+	"github.com/chud-lori/go-boilerplate/domain/ports"
 )
 
 type UserServiceImpl struct {
 	ports.UserRepository
-	logger *logrus.Entry
 }
 
 // provider or constructor
@@ -134,7 +132,6 @@ func (service *UserServiceImpl) FindAll(ctx context.Context) ([]*transport.UserR
 		return nil, err
 	}
 
-	//var users_response []transport.UserResponse
 	users_response := make([]*transport.UserResponse, len(users_result))
 
 	for i, user := range users_result {

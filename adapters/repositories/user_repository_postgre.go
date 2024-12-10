@@ -1,11 +1,12 @@
 package repositories
 
 import (
-	"boilerplate/domain/entities"
 	"context"
 	"database/sql"
 	"fmt"
 	"time"
+
+	"github.com/chud-lori/go-boilerplate/domain/entities"
 
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"

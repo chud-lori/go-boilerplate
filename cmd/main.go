@@ -1,35 +1,29 @@
 package main
 
 import (
-	//"context"
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"time"
 
-	//"log"
-	//"math/rand"
-	"boilerplate/adapters/controllers"
-	"boilerplate/adapters/repositories"
-	"boilerplate/adapters/utils"
-	"boilerplate/adapters/web"
-	"boilerplate/domain/services"
-	"boilerplate/infrastructure"
-	"boilerplate/pkg/logger"
-	"net/http"
+	"github.com/chud-lori/go-boilerplate/adapters/controllers"
+	"github.com/chud-lori/go-boilerplate/adapters/repositories"
+	"github.com/chud-lori/go-boilerplate/adapters/utils"
+	"github.com/chud-lori/go-boilerplate/adapters/web"
+	"github.com/chud-lori/go-boilerplate/domain/services"
+	"github.com/chud-lori/go-boilerplate/infrastructure"
+	"github.com/chud-lori/go-boilerplate/pkg/logger"
 
 	"github.com/joho/godotenv"
 )
-
-//type Middleware func(http.HandlerFunc) http.HandlerFunc
 
 func APIKeyMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		apiKey := r.Header.Get("x-api-key")
 		if apiKey != "secret-api-key" {
-			//logger, _ := r.Context().Value("logger").(*logrus.Entry)
-			//logger.Warn("Unauth bnruhhh")
+			log.Println("Unauthorized Failed")
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
@@ -41,7 +35,7 @@ func main() {
 
 	err := godotenv.Load()
 	if err != nil {
-		logger.Log.Fatal("Failed load keys")
+		log.Fatal("Failed load keys")
 	}
 
 	postgredb := infrastructure.NewPostgreDB()

@@ -1,8 +1,9 @@
 package web
 
 import (
-	"boilerplate/domain/ports"
 	"net/http"
+
+	"github.com/chud-lori/go-boilerplate/domain/ports"
 )
 
 func UserRouter(controller ports.UserController, serve *http.ServeMux) {

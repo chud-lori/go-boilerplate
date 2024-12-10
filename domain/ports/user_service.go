@@ -1,8 +1,9 @@
 package ports
 
 import (
-	"boilerplate/adapters/transport"
 	"context"
+
+	"github.com/chud-lori/go-boilerplate/adapters/transport"
 )
 
 type UserService interface {

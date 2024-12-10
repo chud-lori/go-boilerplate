@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	pb "boilerplate/mail_grpc"
+	pb "github.com/chud-lori/go-boilerplate/mail_grpc"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"

@@ -1,8 +1,9 @@
 package ports
 
 import (
-	"boilerplate/domain/entities"
 	"context"
+
+	"github.com/chud-lori/go-boilerplate/domain/entities"
 )
 
 type UserRepository interface {
