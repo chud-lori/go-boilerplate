@@ -9,16 +9,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var Log *logrus.Logger
-
-func Init(ctx context.Context) {
-	Log = logrus.New()
-	Log.SetFormatter(&logrus.JSONFormatter{})
-	Log.SetLevel(logrus.InfoLevel)
-	requestID, _ := ctx.Value("RequestID").(string)
-	Log = Log.WithField("RequestID", requestID).Logger
-}
-
 type loggingTraffic struct {
 	http.ResponseWriter
 	statusCode int
@@ -69,11 +59,10 @@ func LogTrafficMiddleware(next http.Handler) http.Handler {
 		duration := time.Since(start)
 
 		logger.WithFields(logrus.Fields{
-			"requestID": requestID,
-			"method":    r.Method,
-			"path":      r.URL.Path,
-			"duration":  duration.String(),
-			"status":    lrw.statusCode,
+			"method":   r.Method,
+			"path":     r.URL.Path,
+			"duration": duration.String(),
+			"status":   lrw.statusCode,
 		}).Info("Processed request")
 
 	})

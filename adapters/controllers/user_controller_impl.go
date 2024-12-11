@@ -46,11 +46,11 @@ type WebResponse struct {
 	Data    interface{} `json:"data"`
 }
 
-func (controller *UserController) Create(writer http.ResponseWriter, request *http.Request) {
+func (controller *UserController) Create(w http.ResponseWriter, r *http.Request) {
 	userRequest := transport.UserRequest{}
-	GetPayload(request, &userRequest)
+	GetPayload(r, &userRequest)
 
-	userResponse, err := controller.UserService.Save(request.Context(), &userRequest)
+	userResponse, err := controller.UserService.Save(r.Context(), &userRequest)
 
 	if err != nil {
 		fmt.Println("Error create controller")
@@ -63,14 +63,14 @@ func (controller *UserController) Create(writer http.ResponseWriter, request *ht
 		Data:    userResponse,
 	}
 
-	WriteResponse(writer, &response, http.StatusCreated)
+	WriteResponse(w, &response, http.StatusCreated)
 }
 
-func (controller *UserController) Update(writer http.ResponseWriter, request *http.Request) {
+func (controller *UserController) Update(w http.ResponseWriter, r *http.Request) {
 	userRequest := transport.UserRequest{}
-	GetPayload(request, &userRequest)
+	GetPayload(r, &userRequest)
 
-	userResponse, err := controller.UserService.Update(request.Context(), &userRequest)
+	userResponse, err := controller.UserService.Update(r.Context(), &userRequest)
 
 	if err != nil {
 		fmt.Println("Error update controller")
@@ -83,13 +83,13 @@ func (controller *UserController) Update(writer http.ResponseWriter, request *ht
 		Data:    userResponse,
 	}
 
-	WriteResponse(writer, &response, http.StatusOK)
+	WriteResponse(w, &response, http.StatusOK)
 }
 
-func (controller *UserController) Delete(writer http.ResponseWriter, request *http.Request) {
-	userId := request.PathValue("userId")
+func (controller *UserController) Delete(w http.ResponseWriter, r *http.Request) {
+	userId := r.PathValue("userId")
 
-	err := controller.UserService.Delete(request.Context(), userId)
+	err := controller.UserService.Delete(r.Context(), userId)
 
 	if err != nil {
 		fmt.Println("Error delete controller")
@@ -102,7 +102,7 @@ func (controller *UserController) Delete(writer http.ResponseWriter, request *ht
 		Data:    "sucess",
 	}
 
-	WriteResponse(writer, &response, http.StatusOK)
+	WriteResponse(w, &response, http.StatusOK)
 }
 
 func (c *UserController) FindById(w http.ResponseWriter, r *http.Request) {
