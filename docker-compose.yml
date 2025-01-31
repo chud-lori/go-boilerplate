@@ -1,4 +1,3 @@
-
 version: '3.4'
 
 networks:
@@ -9,6 +8,9 @@ services:
   service-postgres:
     container_name: service-postgres
     image: postgres:latest
+    labels:
+      logging: "service-promtail"
+      logging_jobname: "postgres-log"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -26,7 +28,7 @@ services:
     build: .
     labels:
       logging: "service-promtail"
-      logging_jobname: "containerlogs"
+      logging_jobname: "service-app-log"
     ports:
       - 1234:1234
       - 8080:8080

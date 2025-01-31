@@ -1,31 +1,49 @@
-
+# Server configuration, Promtail will listen to http port 9080
 server:
   http_listen_port: 9080
   grpc_listen_port: 0
   log_level: debug
 
+# Promtail uses a positions file to keep track of where it left off reading log files
+# Ensuring if Promtail restarts, it can continue from where it stopped and the file stored at /tmp/positions.yaml
 positions:
   filename: /tmp/positions.yaml
 
+# Specify the Loki server endpoint where it run  on port 3100
+# "service-loki" is our service name in docker compose
 clients:
   - url: http://service-loki:3100/loki/api/v1/push
 
+# This is the section of the scrapping process
 scrape_configs:
-  - job_name: flog_scrape
+  # scrapping job name, a unique identifier for the scrapping job, you can have more than one
+  - job_name: service_scrape
+  # Promtail connects to the Docker daemon using the Unix socket at /var/run/docker.sock to discover running containers
+  # It will list of running containers every 5 seconds
+  # Filters the container based on Docker labels, here it only selects containers with the label "logging=service-promtail"
     docker_sd_configs:
       - host: unix:///var/run/docker.sock
         refresh_interval: 5s
         filters:
           - name: label
             values: ["logging=service-promtail"]
+    # Relabeling is used to modify or add labels to log before sending to Loki
     relabel_configs:
+      # Extract the container name from metadata
+      # uses regex to remove "/" from container name, example from "/service" to "service"
+      # stores the result in a new label called "container"
       - source_labels: ['__meta_docker_container_name']
         regex: '/(.*)'
         target_label: 'container'
+      # Extract the docker log stream like stdout and stderr
+      # store the result in another new label "logstream"
       - source_labels: ['__meta_docker_container_log_stream']
         target_label: 'logstream'
+      # Extract the value of Docker label "logging_jobname" from container metadata
+      # store to label "job"
       - source_labels: ['__meta_docker_container_label_logging_jobname']
         target_label: 'job'
       #- source_labels: ['__log_message']
       #  regex: '.*otel.*' # Adjust this regex to match OpenTelemetry logs
       #  action: drop # Drop OpenTelemetry logs
+
