@@ -19,18 +19,6 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func APIKeyMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		apiKey := r.Header.Get("x-api-key")
-		if apiKey != "secret-api-key" {
-			log.Println("Unauthorized Failed")
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
-}
-
 func main() {
 
 	err := godotenv.Load()
@@ -51,7 +39,7 @@ func main() {
 
 	var handler http.Handler = router
 	handler = logger.LogTrafficMiddleware(handler)
-	handler = APIKeyMiddleware(handler)
+	handler = utils.APIKeyMiddleware(handler)
 
 	server := http.Server{
 		Addr:    fmt.Sprintf(":%s", os.Getenv("APP_PORT")),
@@ -60,7 +48,7 @@ func main() {
 
 	// Run server in a goroutine
 	go func() {
-		log.Printf("Server is running on port %s", os.Getenv("APP_PORT"))
+        //log.Printf("Server is running on port %s", os.Getenv("APP_PORT"))
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("HTTP server error: %v", err)
 		}

@@ -37,6 +37,7 @@ func LogTrafficMiddleware(next http.Handler) http.Handler {
 
 		baseLogger := logrus.New()
 		baseLogger.SetFormatter(&logrus.JSONFormatter{})
+        baseLogger.SetReportCaller(true)
 
 		logger := baseLogger.WithField("RequestID", requestID)
 
