@@ -1,0 +1,78 @@
+
+version: '3.4'
+
+networks:
+  service-network:
+    driver: bridge
+
+services:
+  service-postgres:
+    container_name: service-postgres
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: service_db
+    ports:
+      - 5432:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db.sql:/docker-entrypoint-initdb.d/db.sql
+    networks:
+      - service-network
+
+  service-app:
+    container_name: service-app
+    build: .
+    labels:
+      logging: "service-promtail"
+      logging_jobname: "containerlogs"
+    ports:
+      - 1234:1234
+      - 8080:8080
+    volumes:
+      - ./.env:/app/.env
+    depends_on:
+      - service-postgres
+    networks:
+      - service-network
+
+  service-grafana:
+    container_name: service-grafana
+    image: grafana/grafana:latest
+    ports:
+      - 3000:3000
+    volumes:
+      - ./grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yaml
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+    networks:
+      - service-network
+
+  service-loki:
+    container_name: service-loki
+    image: grafana/loki:3.2.1
+    ports:
+      - 3100:3100
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - service-network
+
+  service-promtail:
+    image:  grafana/promtail:3.2.1
+    container_name: service-promtail
+    volumes:
+      - ./promtail.yml:/etc/promtail/docker-config.yaml
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: -config.file=/etc/promtail/docker-config.yaml
+    depends_on:
+      - service-loki
+    networks:
+      - service-network
+
+volumes:
+  postgres_data:
+
