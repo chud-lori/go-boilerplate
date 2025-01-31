@@ -3,6 +3,7 @@ package logger
 import (
 	"context"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/google/uuid"
@@ -37,7 +38,8 @@ func LogTrafficMiddleware(next http.Handler) http.Handler {
 
 		baseLogger := logrus.New()
 		baseLogger.SetFormatter(&logrus.JSONFormatter{})
-        baseLogger.SetReportCaller(true)
+        baseLogger.SetLevel(logrus.InfoLevel)
+        baseLogger.SetOutput(os.Stdout)
 
 		logger := baseLogger.WithField("RequestID", requestID)
 
@@ -51,6 +53,7 @@ func LogTrafficMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(lrw, r)
 
 		// TODO: if showing source in log
+        // baseLogger.SetReportCaller(true)
 		//_, file, line, ok := runtime.Caller(1)
 		//source := "unknown"
 		//if ok {
