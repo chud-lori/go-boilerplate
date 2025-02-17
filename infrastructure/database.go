@@ -4,10 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"net/url"
-	"fmt"
 	"time"
 	"github.com/chud-lori/go-boilerplate/domain/ports"
 	_ "github.com/lib/pq"
+	"github.com/sirupsen/logrus"
 )
 
 // compile-time interface check
@@ -60,18 +60,21 @@ func (p *Database) Close() error {
     return p.db.Close()
 }
 
-func NewDatabase(dbURL string) (ports.Database, error) {
+func NewDatabase(dbURL string, logger *logrus.Logger) (ports.Database, error) {
 	parseDBUrl, _ := url.Parse(dbURL)
+	dbLogger := logger.WithFields(logrus.Fields{
+		"layer": "database",
+		"driver": parseDBUrl.Scheme,
+	})
 	db, err := sql.Open(parseDBUrl.Scheme, dbURL)
-	if err != nil {
-		return nil, err
-	}
 
 	if err != nil {
+		dbLogger.Info("Failed connect to database")
 		return nil, err
 	}
 
 	if err = db.Ping(); err != nil {
+		dbLogger.Info("Failed connect to database (PING)")
 		return nil, err
 	}
 
