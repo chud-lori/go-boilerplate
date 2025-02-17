@@ -14,11 +14,11 @@ import (
 )
 
 type UserRepositoryPostgre struct {
-	db     ports.DB
+	db     ports.Database
 	logger *logrus.Entry
 }
 
-func NewUserRepositoryPostgre(db ports.DB) (*UserRepositoryPostgre, error) {
+func NewUserRepositoryPostgre(db ports.Database) (*UserRepositoryPostgre, error) {
 	return &UserRepositoryPostgre{
 		db: db,
 	}, nil

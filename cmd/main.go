@@ -26,7 +26,12 @@ func main() {
 		log.Fatal("Failed load keys")
 	}
 
-	db := infrastructure.NewPostgreDB()
+	baseLogger := logger.NewLogger()
+
+	db, err := infrastructure.NewDatabase(os.Getenv("DB_URL"), baseLogger)
+	if err != nil {
+		baseLogger.Fatal("Failed to connect to database: ", err)
+	}
 	defer db.Close()
 
 	userRepository, _ := repositories.NewUserRepositoryPostgre(db)
@@ -38,8 +43,8 @@ func main() {
 	web.UserRouter(userController, router)
 
 	var handler http.Handler = router
-	handler = logger.LogTrafficMiddleware(handler)
-	handler = utils.APIKeyMiddleware(handler)
+	handler = logger.LogTrafficMiddleware(handler, baseLogger)
+	handler = utils.APIKeyMiddleware(handler, baseLogger)
 
 	server := http.Server{
 		Addr:    fmt.Sprintf(":%s", os.Getenv("APP_PORT")),

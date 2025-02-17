@@ -15,6 +15,15 @@ type loggingTraffic struct {
 	statusCode int
 }
 
+// Add this new function at the top
+func NewLogger() *logrus.Logger {
+    logger := logrus.New()
+    logger.SetFormatter(&logrus.JSONFormatter{})
+    logger.SetLevel(logrus.InfoLevel)
+    logger.SetOutput(os.Stdout)
+    return logger
+}
+
 func NewLoggingTraffic(w http.ResponseWriter) *loggingTraffic {
 	return &loggingTraffic{
 		ResponseWriter: w,
@@ -27,7 +36,7 @@ func (lrw *loggingTraffic) WriteHeader(code int) {
 	lrw.ResponseWriter.WriteHeader(code)
 }
 
-func LogTrafficMiddleware(next http.Handler) http.Handler {
+func LogTrafficMiddleware(next http.Handler, baseLogger *logrus.Logger) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
@@ -35,11 +44,6 @@ func LogTrafficMiddleware(next http.Handler) http.Handler {
 		if requestID == "" {
 			requestID = uuid.New().String()
 		}
-
-		baseLogger := logrus.New()
-		baseLogger.SetFormatter(&logrus.JSONFormatter{})
-        baseLogger.SetLevel(logrus.InfoLevel)
-        baseLogger.SetOutput(os.Stdout)
 
 		logger := baseLogger.WithField("RequestID", requestID)
 
