@@ -6,12 +6,12 @@ import (
 )
 
 // New interface for database connection management
-type DB interface {
-    BeginTx(context.Context) (DBTransaction, error)
+type Database interface {
+    BeginTx(context.Context) (Transaction, error)
     Close() error
 }
 
-type DBTransaction interface {
+type Transaction interface {
 	ExecContext(context.Context, string, ...interface{}) (sql.Result, error)
 	QueryRowContext(context.Context, string, ...interface{}) *sql.Row
 	QueryContext(context.Context, string, ...interface{}) (*sql.Rows, error)

@@ -26,7 +26,10 @@ func main() {
 		log.Fatal("Failed load keys")
 	}
 
-	db := infrastructure.NewPostgreDB()
+	db, err := infrastructure.NewDatabase(os.Getenv("DB_URL"))
+	if err != nil {
+		panic(err)
+	}
 	defer db.Close()
 
 	userRepository, _ := repositories.NewUserRepositoryPostgre(db)
