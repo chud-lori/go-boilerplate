@@ -103,14 +103,7 @@ func (service *UserServiceImpl) Delete(ctx context.Context, id string) error {
 }
 
 func (s *UserServiceImpl) FindById(ctx context.Context, id string) (*transport.UserResponse, error) {
-	user := entities.User{}
-
 	user_result, err := s.UserRepository.FindById(ctx, id)
-
-	user.Id = user_result.Id
-	user.Email = user_result.Email
-	user.Created_at = user_result.Created_at
-
 	if err != nil {
 		return nil, err
 	}

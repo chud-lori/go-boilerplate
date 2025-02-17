@@ -26,10 +26,10 @@ func main() {
 		log.Fatal("Failed load keys")
 	}
 
-	postgredb := infrastructure.NewPostgreDB()
-	defer postgredb.Close()
+	db := infrastructure.NewPostgreDB()
+	defer db.Close()
 
-	userRepository, _ := repositories.NewUserRepositoryPostgre(postgredb)
+	userRepository, _ := repositories.NewUserRepositoryPostgre(db)
 	userService := services.NewUserService(userRepository)
 	userController := controllers.NewUserController(userService)
 
@@ -48,7 +48,7 @@ func main() {
 
 	// Run server in a goroutine
 	go func() {
-        //log.Printf("Server is running on port %s", os.Getenv("APP_PORT"))
+        // log.Printf("Server is running on port %s", os.Getenv("APP_PORT"))
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("HTTP server error: %v", err)
 		}
@@ -56,7 +56,7 @@ func main() {
 
 	wait := utils.GracefullShutdown(context.Background(), 5*time.Second, map[string]utils.Operation{
 		"database": func(ctx context.Context) error {
-			return postgredb.Close()
+			return db.Close()
 		},
 		"http-server": func(ctx context.Context) error {
 			return server.Shutdown(ctx)
