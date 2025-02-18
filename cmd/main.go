@@ -34,8 +34,10 @@ func main() {
 	}
 	defer db.Close()
 
+	ctxTimeout := time.Duration(60) * time.Second
+
 	userRepository, _ := repositories.NewUserRepositoryPostgre(db)
-	userService := services.NewUserService(db, userRepository)
+	userService := services.NewUserService(db, userRepository, ctxTimeout)
 	userController := controllers.NewUserController(userService)
 
 	router := http.NewServeMux()

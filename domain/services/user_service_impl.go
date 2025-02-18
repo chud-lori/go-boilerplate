@@ -15,13 +15,15 @@ import (
 type UserServiceImpl struct {
 	db ports.Database
 	ports.UserRepository
+	ctxTimeout time.Duration
 }
 
 // provider or constructor
-func NewUserService(db ports.Database, userRepository ports.UserRepository) *UserServiceImpl {
+func NewUserService(db ports.Database, userRepository ports.UserRepository, ctxTimeout time.Duration) *UserServiceImpl {
 	return &UserServiceImpl{
 		db: db,
 		UserRepository: userRepository,
+		ctxTimeout: ctxTimeout,
 	}
 }
 
@@ -49,7 +51,10 @@ func generatePasscode() string {
 	return alphStr + msStr
 }
 
-func (s *UserServiceImpl) Save(ctx context.Context, request *transport.UserRequest) (*transport.UserResponse, error) {
+func (s *UserServiceImpl) Save(c context.Context, request *transport.UserRequest) (*transport.UserResponse, error) {
+	ctx, cancel := context.WithTimeout(c, s.ctxTimeout)
+	defer cancel()
+
 	tx, err := s.db.BeginTx(ctx)
     if err != nil {
         return nil, err
@@ -86,7 +91,10 @@ func (s *UserServiceImpl) Save(ctx context.Context, request *transport.UserReque
 	return user_response, nil
 }
 
-func (s *UserServiceImpl) Update(ctx context.Context, request *transport.UserRequest) (*transport.UserResponse, error) {
+func (s *UserServiceImpl) Update(c context.Context, request *transport.UserRequest) (*transport.UserResponse, error) {
+	ctx, cancel := context.WithTimeout(c, s.ctxTimeout)
+	defer cancel()
+
 	tx, err := s.db.BeginTx(ctx)
     if err != nil {
         return nil, err
@@ -122,7 +130,10 @@ func (s *UserServiceImpl) Update(ctx context.Context, request *transport.UserReq
 	return user_response, nil
 }
 
-func (s *UserServiceImpl) Delete(ctx context.Context, id string) error {
+func (s *UserServiceImpl) Delete(c context.Context, id string) error {
+	ctx, cancel := context.WithTimeout(c, s.ctxTimeout)
+	defer cancel()
+
 	tx, err := s.db.BeginTx(ctx)
     if err != nil {
         return err
@@ -147,7 +158,10 @@ func (s *UserServiceImpl) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-func (s *UserServiceImpl) FindById(ctx context.Context, id string) (*transport.UserResponse, error) {
+func (s *UserServiceImpl) FindById(c context.Context, id string) (*transport.UserResponse, error) {
+	ctx, cancel := context.WithTimeout(c, s.ctxTimeout)
+	defer cancel()
+
 	tx, err := s.db.BeginTx(ctx)
     if err != nil {
         return nil, err
@@ -177,7 +191,10 @@ func (s *UserServiceImpl) FindById(ctx context.Context, id string) (*transport.U
 	return user_response, nil
 }
 
-func (s *UserServiceImpl) FindAll(ctx context.Context) ([]*transport.UserResponse, error) {
+func (s *UserServiceImpl) FindAll(c context.Context) ([]*transport.UserResponse, error) {
+	ctx, cancel := context.WithTimeout(c, s.ctxTimeout)
+	defer cancel()
+
 	tx, err := s.db.BeginTx(ctx)
     if err != nil {
         return nil, err
