@@ -5,17 +5,22 @@ import (
 	"database/sql"
 )
 
-// Interface for database connection management
-type Database interface {
-    BeginTx(context.Context) (Transaction, error)
-    Close() error
+// DBTX interface for database operations (shared by *sql.DB and *sql.Tx)
+type DBTX interface {
+    ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
+    QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
+    QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
 }
 
-// Interface for database transaction
+// Transaction interface (wraps DBTX)
 type Transaction interface {
-	ExecContext(context.Context, string, ...interface{}) (sql.Result, error)
-	QueryRowContext(context.Context, string, ...interface{}) *sql.Row
-	QueryContext(context.Context, string, ...interface{}) (*sql.Rows, error)
-	Commit() error
-	Rollback() error
+    DBTX // Embed the DBTX interface
+    Commit() error
+    Rollback() error
+}
+
+// Database interface
+type Database interface {
+    BeginTx(ctx context.Context) (Transaction, error)
+    Close() error
 }

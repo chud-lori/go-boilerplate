@@ -13,13 +13,17 @@ import (
 )
 
 type UserServiceImpl struct {
+	db ports.Database
 	ports.UserRepository
+	ctxTimeout time.Duration
 }
 
 // provider or constructor
-func NewUserService(userRepository ports.UserRepository) *UserServiceImpl {
+func NewUserService(db ports.Database, userRepository ports.UserRepository, ctxTimeout time.Duration) *UserServiceImpl {
 	return &UserServiceImpl{
+		db: db,
 		UserRepository: userRepository,
+		ctxTimeout: ctxTimeout,
 	}
 }
 
@@ -47,14 +51,28 @@ func generatePasscode() string {
 	return alphStr + msStr
 }
 
-func (service *UserServiceImpl) Save(ctx context.Context, request *transport.UserRequest) (*transport.UserResponse, error) {
+func (s *UserServiceImpl) Save(c context.Context, request *transport.UserRequest) (*transport.UserResponse, error) {
+	ctx, cancel := context.WithTimeout(c, s.ctxTimeout)
+	defer cancel()
+
+	tx, err := s.db.BeginTx(ctx)
+    if err != nil {
+        return nil, err
+    }
+	// handle panic gracefully
+    defer func() {
+        if r := recover(); r != nil || err != nil {
+            tx.Rollback()
+        }
+    }()
+
 	user := entities.User{
 		Id:         "",
 		Email:      request.Email,
 		Passcode:   generatePasscode(),
 		Created_at: time.Now(),
 	}
-	user_result, err := service.UserRepository.Save(ctx, &user)
+	user_result, err := s.UserRepository.Save(ctx, tx, &user)
 
 	if err != nil {
 		return nil, err
@@ -66,17 +84,35 @@ func (service *UserServiceImpl) Save(ctx context.Context, request *transport.Use
 		Created_at: user_result.Created_at,
 	}
 
+	if err := tx.Commit(); err != nil {
+        return nil, err
+    }
+
 	return user_response, nil
 }
 
-func (service *UserServiceImpl) Update(ctx context.Context, request *transport.UserRequest) (*transport.UserResponse, error) {
+func (s *UserServiceImpl) Update(c context.Context, request *transport.UserRequest) (*transport.UserResponse, error) {
+	ctx, cancel := context.WithTimeout(c, s.ctxTimeout)
+	defer cancel()
+
+	tx, err := s.db.BeginTx(ctx)
+    if err != nil {
+        return nil, err
+    }
+	// handle panic gracefully
+    defer func() {
+        if r := recover(); r != nil || err != nil {
+            tx.Rollback()
+        }
+    }()
+
 	user := entities.User{
 		Id:         "",
 		Email:      request.Email,
 		Created_at: time.Now(),
 	}
 
-	user_result, err := service.UserRepository.Update(ctx, &user)
+	user_result, err := s.UserRepository.Update(ctx, tx, &user)
 	if err != nil {
 		return nil, err
 	}
@@ -87,22 +123,57 @@ func (service *UserServiceImpl) Update(ctx context.Context, request *transport.U
 		Created_at: user_result.Created_at,
 	}
 
+	if err := tx.Commit(); err != nil {
+        return nil, err
+    }
+
 	return user_response, nil
 }
 
-func (service *UserServiceImpl) Delete(ctx context.Context, id string) error {
+func (s *UserServiceImpl) Delete(c context.Context, id string) error {
+	ctx, cancel := context.WithTimeout(c, s.ctxTimeout)
+	defer cancel()
 
-	err := service.UserRepository.Delete(ctx, id)
+	tx, err := s.db.BeginTx(ctx)
+    if err != nil {
+        return err
+    }
+	// handle panic gracefully
+    defer func() {
+        if r := recover(); r != nil || err != nil {
+            tx.Rollback()
+        }
+    }()
+
+	err = s.UserRepository.Delete(ctx, tx, id)
 
 	if err != nil {
 		return err
 	}
 
+	if err := tx.Commit(); err != nil {
+        return err
+    }
+
 	return nil
 }
 
-func (s *UserServiceImpl) FindById(ctx context.Context, id string) (*transport.UserResponse, error) {
-	user_result, err := s.UserRepository.FindById(ctx, id)
+func (s *UserServiceImpl) FindById(c context.Context, id string) (*transport.UserResponse, error) {
+	ctx, cancel := context.WithTimeout(c, s.ctxTimeout)
+	defer cancel()
+
+	tx, err := s.db.BeginTx(ctx)
+    if err != nil {
+        return nil, err
+    }
+	// handle panic gracefully
+    defer func() {
+        if r := recover(); r != nil || err != nil {
+            tx.Rollback()
+        }
+    }()
+
+	user_result, err := s.UserRepository.FindById(ctx, tx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -113,12 +184,29 @@ func (s *UserServiceImpl) FindById(ctx context.Context, id string) (*transport.U
 		Created_at: user_result.Created_at,
 	}
 
+	if err := tx.Commit(); err != nil {
+        return nil, err
+    }
+
 	return user_response, nil
 }
 
-func (service *UserServiceImpl) FindAll(ctx context.Context) ([]*transport.UserResponse, error) {
+func (s *UserServiceImpl) FindAll(c context.Context) ([]*transport.UserResponse, error) {
+	ctx, cancel := context.WithTimeout(c, s.ctxTimeout)
+	defer cancel()
 
-	users_result, err := service.UserRepository.FindAll(ctx)
+	tx, err := s.db.BeginTx(ctx)
+    if err != nil {
+        return nil, err
+    }
+	// handle panic gracefully
+    defer func() {
+        if r := recover(); r != nil || err != nil {
+            tx.Rollback()
+        }
+    }()
+
+	users_result, err := s.UserRepository.FindAll(ctx, tx)
 
 	if err != nil {
 		return nil, err
@@ -133,6 +221,10 @@ func (service *UserServiceImpl) FindAll(ctx context.Context) ([]*transport.UserR
 			Created_at: user.Created_at,
 		}
 	}
+
+	if err := tx.Commit(); err != nil {
+        return nil, err
+    }
 
 	return users_response, nil
 }

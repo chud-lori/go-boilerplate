@@ -24,20 +24,14 @@ func NewUserRepositoryPostgre(db ports.Database) (*UserRepositoryPostgre, error)
 	}, nil
 }
 
-func (repository *UserRepositoryPostgre) Save(ctx context.Context, user *entities.User) (*entities.User, error) {
-	tx, err := repository.db.BeginTx(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to begin transaction: %v", err)
-	}
-	defer tx.Rollback()
-
+func (repository *UserRepositoryPostgre) Save(ctx context.Context, tx ports.Transaction, user *entities.User) (*entities.User, error) {
 	var id string
 	var createdAt time.Time
 	query := `
             INSERT INTO users (email, passcode)
             VALUES ($1, $2)
             RETURNING id, created_at`
-	err = tx.QueryRowContext(ctx, query, user.Email, user.Passcode).Scan(&id, &createdAt)
+	err := tx.QueryRowContext(ctx, query, user.Email, user.Passcode).Scan(&id, &createdAt)
 	if err != nil {
 		return nil, err
 	}
@@ -45,40 +39,20 @@ func (repository *UserRepositoryPostgre) Save(ctx context.Context, user *entitie
 	user.Id = id
 	user.Created_at = createdAt
 
-	if err = tx.Commit(); err!= nil {
-		return nil, fmt.Errorf("failed to commit transaction: %v", err)
-	}
-
 	return user, nil
 }
 
-func (repository *UserRepositoryPostgre) Update(ctx context.Context, user *entities.User) (*entities.User, error) {
-    tx, err := repository.db.BeginTx(ctx)
-    if err != nil {
-        return nil, fmt.Errorf("failed to begin transaction: %v", err)
-    }
-    defer tx.Rollback()
-
+func (repository *UserRepositoryPostgre) Update(ctx context.Context, tx ports.Transaction, user *entities.User) (*entities.User, error) {
     query := "UPDATE users SET email = $1, passcode = $2 WHERE id = $3"
-    _, err = tx.ExecContext(ctx, query, user.Email, user.Passcode, user.Id)
+    _, err := tx.ExecContext(ctx, query, user.Email, user.Passcode, user.Id)
     if err != nil {
         return nil, err
-    }
-
-    if err = tx.Commit(); err != nil {
-        return nil, fmt.Errorf("failed to commit transaction: %v", err)
     }
 
     return user, nil
 }
 
-func (repository *UserRepositoryPostgre) Delete(ctx context.Context, id string) error {
-    tx, err := repository.db.BeginTx(ctx)
-    if err != nil {
-        return fmt.Errorf("failed to begin transaction: %v", err)
-    }
-    defer tx.Rollback()
-
+func (repository *UserRepositoryPostgre) Delete(ctx context.Context, tx ports.Transaction, id string) error {
     query := "DELETE FROM users WHERE id = $1"
     result, err := tx.ExecContext(ctx, query, id)
     if err != nil {
@@ -94,20 +68,10 @@ func (repository *UserRepositoryPostgre) Delete(ctx context.Context, id string) 
         return fmt.Errorf("user not found")
     }
 
-    if err = tx.Commit(); err != nil {
-        return fmt.Errorf("failed to commit transaction: %v", err)
-    }
-
     return nil
 }
 
-func (r *UserRepositoryPostgre) FindById(ctx context.Context, id string) (*entities.User, error) {
-    tx, err := r.db.BeginTx(ctx)
-    if err != nil {
-        return nil, fmt.Errorf("failed to begin transaction: %v", err)
-    }
-    defer tx.Rollback()
-
+func (r *UserRepositoryPostgre) FindById(ctx context.Context, tx ports.Transaction, id string) (*entities.User, error) {
     if _, err := uuid.Parse(id); err != nil {
 		//r.logger.Info("Invalid UUID Format: ", id)
         return nil, fmt.Errorf("Invalid UUID Format")
@@ -115,7 +79,7 @@ func (r *UserRepositoryPostgre) FindById(ctx context.Context, id string) (*entit
     
     user := &entities.User{}
     query := "SELECT id, email, created_at FROM users WHERE id = $1"
-    err = tx.QueryRowContext(ctx, query, id).Scan(&user.Id, &user.Email, &user.Created_at)
+    err := tx.QueryRowContext(ctx, query, id).Scan(&user.Id, &user.Email, &user.Created_at)
 
     if err != nil {
         if err == sql.ErrNoRows {
@@ -124,20 +88,10 @@ func (r *UserRepositoryPostgre) FindById(ctx context.Context, id string) (*entit
         return nil, err
     }
 
-    if err = tx.Commit(); err != nil {
-        return nil, fmt.Errorf("failed to commit transaction: %v", err)
-    }
-
     return user, nil
 }
 
-func (repository *UserRepositoryPostgre) FindAll(ctx context.Context) ([]*entities.User, error) {
-    tx, err := repository.db.BeginTx(ctx)
-    if err != nil {
-        return nil, fmt.Errorf("failed to begin transaction: %v", err)
-    }
-    defer tx.Rollback()
-
+func (repository *UserRepositoryPostgre) FindAll(ctx context.Context, tx ports.Transaction) ([]*entities.User, error) {
     query := "SELECT id, email, created_at FROM users"
     rows, err := tx.QueryContext(ctx, query)
     if err != nil {
@@ -157,10 +111,6 @@ func (repository *UserRepositoryPostgre) FindAll(ctx context.Context) ([]*entiti
 
     if err = rows.Err(); err != nil {
         return nil, err
-    }
-
-    if err = tx.Commit(); err != nil {
-        return nil, fmt.Errorf("failed to commit transaction: %v", err)
     }
 
     return users, nil

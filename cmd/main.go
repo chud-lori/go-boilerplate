@@ -13,7 +13,7 @@ import (
 	"github.com/chud-lori/go-boilerplate/adapters/utils"
 	"github.com/chud-lori/go-boilerplate/adapters/web"
 	"github.com/chud-lori/go-boilerplate/domain/services"
-	"github.com/chud-lori/go-boilerplate/infrastructure"
+	"github.com/chud-lori/go-boilerplate/infrastructure/datastore"
 	"github.com/chud-lori/go-boilerplate/pkg/logger"
 
 	"github.com/joho/godotenv"
@@ -28,14 +28,16 @@ func main() {
 
 	baseLogger := logger.NewLogger()
 
-	db, err := infrastructure.NewDatabase(os.Getenv("DB_URL"), baseLogger)
+	db, err := datastore.NewDatabase(os.Getenv("DB_URL"), baseLogger)
 	if err != nil {
 		baseLogger.Fatal("Failed to connect to database: ", err)
 	}
 	defer db.Close()
 
+	ctxTimeout := time.Duration(60) * time.Second
+
 	userRepository, _ := repositories.NewUserRepositoryPostgre(db)
-	userService := services.NewUserService(userRepository)
+	userService := services.NewUserService(db, userRepository, ctxTimeout)
 	userController := controllers.NewUserController(userService)
 
 	router := http.NewServeMux()
