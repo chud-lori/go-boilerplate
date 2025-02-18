@@ -54,11 +54,10 @@ func (service *UserServiceImpl) Save(ctx context.Context, request *transport.Use
 		Passcode:   generatePasscode(),
 		Created_at: time.Now(),
 	}
-	user_result, error := service.UserRepository.Save(ctx, &user)
+	user_result, err := service.UserRepository.Save(ctx, &user)
 
-	if error != nil {
-
-		panic(error)
+	if err != nil {
+		return nil, err
 	}
 
 	user_response := &transport.UserResponse{
@@ -77,9 +76,9 @@ func (service *UserServiceImpl) Update(ctx context.Context, request *transport.U
 		Created_at: time.Now(),
 	}
 
-	user_result, error := service.UserRepository.Update(ctx, &user)
-	if error != nil {
-		panic(error)
+	user_result, err := service.UserRepository.Update(ctx, &user)
+	if err != nil {
+		return nil, err
 	}
 
 	user_response := &transport.UserResponse{
