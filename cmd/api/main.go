@@ -9,11 +9,12 @@ import (
 	"time"
 
 	"github.com/chud-lori/go-boilerplate/adapters/controllers"
+	"github.com/chud-lori/go-boilerplate/adapters/middleware"
 	"github.com/chud-lori/go-boilerplate/adapters/repositories"
-	"github.com/chud-lori/go-boilerplate/adapters/utils"
 	"github.com/chud-lori/go-boilerplate/adapters/web"
 	"github.com/chud-lori/go-boilerplate/domain/services"
 	"github.com/chud-lori/go-boilerplate/infrastructure/datastore"
+	"github.com/chud-lori/go-boilerplate/internal/utils"
 	"github.com/chud-lori/go-boilerplate/pkg/logger"
 
 	"github.com/joho/godotenv"
@@ -36,17 +37,23 @@ func main() {
 
 	ctxTimeout := time.Duration(60) * time.Second
 
-	userRepository, _ := repositories.NewUserRepositoryPostgre(db)
-	userService := services.NewUserService(db, userRepository, ctxTimeout)
-	userController := controllers.NewUserController(userService)
+	userRepository := &repositories.UserRepositoryPostgre{DB: db}
+	userService := &services.UserServiceImpl{
+		DB:             db,
+		UserRepository: userRepository,
+		CtxTimeout:     ctxTimeout,
+	}
+	userController := &controllers.UserController{
+		UserService: userService,
+	}
 
 	router := http.NewServeMux()
 
 	web.UserRouter(userController, router)
 
 	var handler http.Handler = router
-	handler = logger.LogTrafficMiddleware(handler, baseLogger)
-	handler = utils.APIKeyMiddleware(handler, baseLogger)
+	handler = middleware.LogTrafficMiddleware(handler, baseLogger)
+	handler = middleware.APIKeyMiddleware(handler, baseLogger)
 
 	server := http.Server{
 		Addr:    fmt.Sprintf(":%s", os.Getenv("APP_PORT")),
@@ -55,7 +62,7 @@ func main() {
 
 	// Run server in a goroutine
 	go func() {
-        // log.Printf("Server is running on port %s", os.Getenv("APP_PORT"))
+		log.Printf("Server is running on port %s", os.Getenv("APP_PORT"))
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("HTTP server error: %v", err)
 		}

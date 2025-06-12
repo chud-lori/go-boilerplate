@@ -3,13 +3,13 @@ package ports
 import (
 	"context"
 
-	"github.com/chud-lori/go-boilerplate/adapters/transport"
+	"github.com/chud-lori/go-boilerplate/domain/entities"
 )
 
 type UserService interface {
-	Save(ctx context.Context, request *transport.UserRequest) (*transport.UserResponse, error)
-	Update(ctx context.Context, request *transport.UserRequest) (*transport.UserResponse, error)
+	Save(ctx context.Context, request *entities.User) (*entities.User, error)
+	Update(ctx context.Context, request *entities.User) (*entities.User, error)
 	Delete(ctx context.Context, id string) error
-	FindById(ctx context.Context, id string) (*transport.UserResponse, error)
-	FindAll(ctx context.Context) ([]*transport.UserResponse, error)
+	FindById(ctx context.Context, id string) (*entities.User, error)
+	FindAll(ctx context.Context) ([]*entities.User, error)
 }
