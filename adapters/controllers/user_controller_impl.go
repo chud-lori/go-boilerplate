@@ -22,7 +22,16 @@ func (controller *UserController) Create(w http.ResponseWriter, r *http.Request)
 	logger := r.Context().Value("logger").(*logrus.Entry)
 
 	userRequest := dto.UserRequest{}
-	helper.GetPayload(r, &userRequest)
+
+	if err := helper.GetPayload(r, &userRequest); err != nil {
+		logger.Error("Failed to get Payload: ", err)
+		helper.WriteResponse(w, dto.WebResponse{
+			Message: "Invalid request payload",
+			Status:  0,
+			Data:    nil,
+		}, http.StatusBadRequest)
+		return
+	}
 
 	userPayload := &entities.User{
 		Id:    "",
@@ -54,9 +63,19 @@ func (controller *UserController) Create(w http.ResponseWriter, r *http.Request)
 }
 
 func (controller *UserController) Update(w http.ResponseWriter, r *http.Request) {
+	logger := r.Context().Value("logger").(*logrus.Entry)
 	userRequest := &dto.UserRequest{}
 	userId := r.PathValue("userId")
-	helper.GetPayload(r, userRequest)
+
+	if err := helper.GetPayload(r, &userRequest); err != nil {
+		logger.Error("Failed to get Payload: ", err)
+		helper.WriteResponse(w, dto.WebResponse{
+			Message: "Invalid request payload",
+			Status:  0,
+			Data:    nil,
+		}, http.StatusBadRequest)
+		return
+	}
 
 	userPayload := &entities.User{
 		Id:       userId,

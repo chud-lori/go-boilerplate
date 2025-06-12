@@ -6,7 +6,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// Add this new function at the top
 func NewLogger() *logrus.Logger {
 	logger := logrus.New()
 	logger.SetFormatter(&logrus.JSONFormatter{})
