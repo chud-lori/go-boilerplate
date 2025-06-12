@@ -17,12 +17,14 @@ type loggingTraffic struct {
 
 // Add this new function at the top
 func NewLogger() *logrus.Logger {
-    logger := logrus.New()
-    logger.SetFormatter(&logrus.JSONFormatter{})
-    logger.SetLevel(logrus.InfoLevel)
-    logger.SetOutput(os.Stdout)
-    return logger
+	logger := logrus.New()
+	logger.SetFormatter(&logrus.JSONFormatter{})
+	logger.SetLevel(logrus.InfoLevel)
+	logger.SetOutput(os.Stdout)
+	return logger
 }
+
+const LoggerContextKey string = "logger"
 
 func NewLoggingTraffic(w http.ResponseWriter) *loggingTraffic {
 	return &loggingTraffic{
@@ -57,7 +59,7 @@ func LogTrafficMiddleware(next http.Handler, baseLogger *logrus.Logger) http.Han
 		next.ServeHTTP(lrw, r)
 
 		// TODO: if showing source in log
-        // baseLogger.SetReportCaller(true)
+		// baseLogger.SetReportCaller(true)
 		//_, file, line, ok := runtime.Caller(1)
 		//source := "unknown"
 		//if ok {

@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/chud-lori/go-boilerplate/adapters/transport"
+	"github.com/chud-lori/go-boilerplate/adapters/web/dto"
 	"github.com/chud-lori/go-boilerplate/domain/ports"
 
 	"github.com/sirupsen/logrus"
@@ -13,10 +14,6 @@ import (
 
 type UserController struct {
 	ports.UserService
-}
-
-func NewUserController(service ports.UserService) *UserController {
-	return &UserController{UserService: service}
 }
 
 func GetPayload(request *http.Request, result interface{}) {
@@ -47,27 +44,27 @@ type WebResponse struct {
 }
 
 func (controller *UserController) Create(w http.ResponseWriter, r *http.Request) {
-    logger := r.Context().Value("logger").(*logrus.Entry)
-    userRequest := transport.UserRequest{}
-    GetPayload(r, &userRequest)
+	logger := r.Context().Value("logger").(*logrus.Entry)
+	userRequest := dto.UserRequest{}
+	GetPayload(r, &userRequest)
 
-    userResponse, err := controller.UserService.Save(r.Context(), &userRequest)
-    if err != nil {
-        logger.Error("Failed to create user: ", err)
-        WriteResponse(w, WebResponse{
-            Message: "Failed to create user",
-            Status:  0,
-            Data:    nil,
-        }, http.StatusBadRequest)
-        return
-    }
+	userResponse, err := controller.UserService.Save(r.Context(), &userRequest)
+	if err != nil {
+		logger.Error("Failed to create user: ", err)
+		WriteResponse(w, WebResponse{
+			Message: "Failed to create user",
+			Status:  0,
+			Data:    nil,
+		}, http.StatusBadRequest)
+		return
+	}
 
-    response := WebResponse{
-        Message: "success save user",
-        Status:  1,
-        Data:    userResponse,
-    }
-    WriteResponse(w, &response, http.StatusCreated)
+	response := WebResponse{
+		Message: "success save user",
+		Status:  1,
+		Data:    userResponse,
+	}
+	WriteResponse(w, &response, http.StatusCreated)
 }
 
 func (controller *UserController) Update(w http.ResponseWriter, r *http.Request) {
@@ -91,73 +88,73 @@ func (controller *UserController) Update(w http.ResponseWriter, r *http.Request)
 }
 
 func (controller *UserController) Delete(w http.ResponseWriter, r *http.Request) {
-    logger := r.Context().Value("logger").(*logrus.Entry)
-    userId := r.PathValue("userId")
+	logger := r.Context().Value("logger").(*logrus.Entry)
+	userId := r.PathValue("userId")
 
-    err := controller.UserService.Delete(r.Context(), userId)
-    if err != nil {
-        if err.Error() == "user not found" {
-            WriteResponse(w, WebResponse{
-                Message: "User not found",
-                Status:  0,
-                Data:    nil,
-            }, http.StatusNotFound)
-            return
-        }
-        logger.Error("Failed to delete user: ", err)
-        WriteResponse(w, WebResponse{
-            Message: "Failed to delete user",
-            Status:  0,
-            Data:    nil,
-        }, http.StatusInternalServerError)
-        return
-    }
+	err := controller.UserService.Delete(r.Context(), userId)
+	if err != nil {
+		if err.Error() == "user not found" {
+			WriteResponse(w, WebResponse{
+				Message: "User not found",
+				Status:  0,
+				Data:    nil,
+			}, http.StatusNotFound)
+			return
+		}
+		logger.Error("Failed to delete user: ", err)
+		WriteResponse(w, WebResponse{
+			Message: "Failed to delete user",
+			Status:  0,
+			Data:    nil,
+		}, http.StatusInternalServerError)
+		return
+	}
 
-    response := WebResponse{
-        Message: "success delete user",
-        Status:  1,
-        Data:    nil,
-    }
-    WriteResponse(w, &response, http.StatusOK)
+	response := WebResponse{
+		Message: "success delete user",
+		Status:  1,
+		Data:    nil,
+	}
+	WriteResponse(w, &response, http.StatusOK)
 }
 
 func (c *UserController) FindById(w http.ResponseWriter, r *http.Request) {
-    logger := r.Context().Value("logger").(*logrus.Entry)
-    userId := r.PathValue("userId")
+	logger := r.Context().Value("logger").(*logrus.Entry)
+	userId := r.PathValue("userId")
 
-    user, err := c.UserService.FindById(r.Context(), userId)
-    if err != nil {
-        if err.Error() == "user not found" {
-            WriteResponse(w, WebResponse{
-                Message: "User not found",
-                Status:  0,
-                Data:    nil,
-            }, http.StatusNotFound)
-            return
-        }
-        if err.Error() == "Invalid UUID Format" {
-            WriteResponse(w, WebResponse{
-                Message: "Invalid user ID format",
-                Status:  0,
-                Data:    nil,
-            }, http.StatusBadRequest)
-            return
-        }
-        logger.Error("Failed to find user: ", err)
-        WriteResponse(w, WebResponse{
-            Message: "Internal server error",
-            Status:  0,
-            Data:    nil,
-        }, http.StatusInternalServerError)
-        return
-    }
+	user, err := c.UserService.FindById(r.Context(), userId)
+	if err != nil {
+		if err.Error() == "user not found" {
+			WriteResponse(w, WebResponse{
+				Message: "User not found",
+				Status:  0,
+				Data:    nil,
+			}, http.StatusNotFound)
+			return
+		}
+		if err.Error() == "Invalid UUID Format" {
+			WriteResponse(w, WebResponse{
+				Message: "Invalid user ID format",
+				Status:  0,
+				Data:    nil,
+			}, http.StatusBadRequest)
+			return
+		}
+		logger.Error("Failed to find user: ", err)
+		WriteResponse(w, WebResponse{
+			Message: "Internal server error",
+			Status:  0,
+			Data:    nil,
+		}, http.StatusInternalServerError)
+		return
+	}
 
-    response := WebResponse{
-        Message: "success get user by id",
-        Status:  1,
-        Data:    user,
-    }
-    WriteResponse(w, &response, http.StatusOK)
+	response := WebResponse{
+		Message: "success get user by id",
+		Status:  1,
+		Data:    user,
+	}
+	WriteResponse(w, &response, http.StatusOK)
 }
 
 func (controller *UserController) FindAll(w http.ResponseWriter, r *http.Request) {

@@ -13,18 +13,9 @@ import (
 )
 
 type UserServiceImpl struct {
-	db ports.Database
+	DB ports.Database
 	ports.UserRepository
-	ctxTimeout time.Duration
-}
-
-// provider or constructor
-func NewUserService(db ports.Database, userRepository ports.UserRepository, ctxTimeout time.Duration) *UserServiceImpl {
-	return &UserServiceImpl{
-		db: db,
-		UserRepository: userRepository,
-		ctxTimeout: ctxTimeout,
-	}
+	CtxTimeout time.Duration
 }
 
 func generatePasscode() string {
@@ -52,19 +43,19 @@ func generatePasscode() string {
 }
 
 func (s *UserServiceImpl) Save(c context.Context, request *transport.UserRequest) (*transport.UserResponse, error) {
-	ctx, cancel := context.WithTimeout(c, s.ctxTimeout)
+	ctx, cancel := context.WithTimeout(c, s.CtxTimeout)
 	defer cancel()
 
-	tx, err := s.db.BeginTx(ctx)
-    if err != nil {
-        return nil, err
-    }
+	tx, err := s.DB.BeginTx(ctx)
+	if err != nil {
+		return nil, err
+	}
 	// handle panic gracefully
-    defer func() {
-        if r := recover(); r != nil || err != nil {
-            tx.Rollback()
-        }
-    }()
+	defer func() {
+		if r := recover(); r != nil || err != nil {
+			tx.Rollback()
+		}
+	}()
 
 	user := entities.User{
 		Id:         "",
@@ -85,26 +76,26 @@ func (s *UserServiceImpl) Save(c context.Context, request *transport.UserRequest
 	}
 
 	if err := tx.Commit(); err != nil {
-        return nil, err
-    }
+		return nil, err
+	}
 
 	return user_response, nil
 }
 
 func (s *UserServiceImpl) Update(c context.Context, request *transport.UserRequest) (*transport.UserResponse, error) {
-	ctx, cancel := context.WithTimeout(c, s.ctxTimeout)
+	ctx, cancel := context.WithTimeout(c, s.CtxTimeout)
 	defer cancel()
 
-	tx, err := s.db.BeginTx(ctx)
-    if err != nil {
-        return nil, err
-    }
+	tx, err := s.DB.BeginTx(ctx)
+	if err != nil {
+		return nil, err
+	}
 	// handle panic gracefully
-    defer func() {
-        if r := recover(); r != nil || err != nil {
-            tx.Rollback()
-        }
-    }()
+	defer func() {
+		if r := recover(); r != nil || err != nil {
+			tx.Rollback()
+		}
+	}()
 
 	user := entities.User{
 		Id:         "",
@@ -124,26 +115,26 @@ func (s *UserServiceImpl) Update(c context.Context, request *transport.UserReque
 	}
 
 	if err := tx.Commit(); err != nil {
-        return nil, err
-    }
+		return nil, err
+	}
 
 	return user_response, nil
 }
 
 func (s *UserServiceImpl) Delete(c context.Context, id string) error {
-	ctx, cancel := context.WithTimeout(c, s.ctxTimeout)
+	ctx, cancel := context.WithTimeout(c, s.CtxTimeout)
 	defer cancel()
 
-	tx, err := s.db.BeginTx(ctx)
-    if err != nil {
-        return err
-    }
+	tx, err := s.DB.BeginTx(ctx)
+	if err != nil {
+		return err
+	}
 	// handle panic gracefully
-    defer func() {
-        if r := recover(); r != nil || err != nil {
-            tx.Rollback()
-        }
-    }()
+	defer func() {
+		if r := recover(); r != nil || err != nil {
+			tx.Rollback()
+		}
+	}()
 
 	err = s.UserRepository.Delete(ctx, tx, id)
 
@@ -152,26 +143,26 @@ func (s *UserServiceImpl) Delete(c context.Context, id string) error {
 	}
 
 	if err := tx.Commit(); err != nil {
-        return err
-    }
+		return err
+	}
 
 	return nil
 }
 
 func (s *UserServiceImpl) FindById(c context.Context, id string) (*transport.UserResponse, error) {
-	ctx, cancel := context.WithTimeout(c, s.ctxTimeout)
+	ctx, cancel := context.WithTimeout(c, s.CtxTimeout)
 	defer cancel()
 
-	tx, err := s.db.BeginTx(ctx)
-    if err != nil {
-        return nil, err
-    }
+	tx, err := s.DB.BeginTx(ctx)
+	if err != nil {
+		return nil, err
+	}
 	// handle panic gracefully
-    defer func() {
-        if r := recover(); r != nil || err != nil {
-            tx.Rollback()
-        }
-    }()
+	defer func() {
+		if r := recover(); r != nil || err != nil {
+			tx.Rollback()
+		}
+	}()
 
 	user_result, err := s.UserRepository.FindById(ctx, tx, id)
 	if err != nil {
@@ -185,26 +176,26 @@ func (s *UserServiceImpl) FindById(c context.Context, id string) (*transport.Use
 	}
 
 	if err := tx.Commit(); err != nil {
-        return nil, err
-    }
+		return nil, err
+	}
 
 	return user_response, nil
 }
 
 func (s *UserServiceImpl) FindAll(c context.Context) ([]*transport.UserResponse, error) {
-	ctx, cancel := context.WithTimeout(c, s.ctxTimeout)
+	ctx, cancel := context.WithTimeout(c, s.CtxTimeout)
 	defer cancel()
 
-	tx, err := s.db.BeginTx(ctx)
-    if err != nil {
-        return nil, err
-    }
+	tx, err := s.DB.BeginTx(ctx)
+	if err != nil {
+		return nil, err
+	}
 	// handle panic gracefully
-    defer func() {
-        if r := recover(); r != nil || err != nil {
-            tx.Rollback()
-        }
-    }()
+	defer func() {
+		if r := recover(); r != nil || err != nil {
+			tx.Rollback()
+		}
+	}()
 
 	users_result, err := s.UserRepository.FindAll(ctx, tx)
 
@@ -223,8 +214,8 @@ func (s *UserServiceImpl) FindAll(c context.Context) ([]*transport.UserResponse,
 	}
 
 	if err := tx.Commit(); err != nil {
-        return nil, err
-    }
+		return nil, err
+	}
 
 	return users_response, nil
 }
