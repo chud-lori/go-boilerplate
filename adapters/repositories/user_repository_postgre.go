@@ -10,7 +10,6 @@ import (
 	"github.com/chud-lori/go-boilerplate/domain/ports"
 	"github.com/chud-lori/go-boilerplate/pkg/logger"
 
-	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 )
 
@@ -68,12 +67,6 @@ func (repository *UserRepositoryPostgre) Delete(ctx context.Context, tx ports.Tr
 }
 
 func (r *UserRepositoryPostgre) FindById(ctx context.Context, tx ports.Transaction, id string) (*entities.User, error) {
-	// TODO: supposed to be in service layer
-	if _, err := uuid.Parse(id); err != nil {
-		//r.logger.Info("Invalid UUID Format: ", id)
-		return nil, fmt.Errorf("Invalid UUID Format")
-	}
-
 	user := &entities.User{}
 	query := "SELECT id, email, created_at FROM users WHERE id = $1"
 	err := tx.QueryRowContext(ctx, query, id).Scan(&user.Id, &user.Email, &user.Created_at)

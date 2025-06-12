@@ -9,11 +9,12 @@ import (
 	"time"
 
 	"github.com/chud-lori/go-boilerplate/adapters/controllers"
+	"github.com/chud-lori/go-boilerplate/adapters/middleware"
 	"github.com/chud-lori/go-boilerplate/adapters/repositories"
-	"github.com/chud-lori/go-boilerplate/adapters/utils"
 	"github.com/chud-lori/go-boilerplate/adapters/web"
 	"github.com/chud-lori/go-boilerplate/domain/services"
 	"github.com/chud-lori/go-boilerplate/infrastructure/datastore"
+	"github.com/chud-lori/go-boilerplate/internal/utils"
 	"github.com/chud-lori/go-boilerplate/pkg/logger"
 
 	"github.com/joho/godotenv"
@@ -51,8 +52,8 @@ func main() {
 	web.UserRouter(userController, router)
 
 	var handler http.Handler = router
-	handler = logger.LogTrafficMiddleware(handler, baseLogger)
-	handler = utils.APIKeyMiddleware(handler, baseLogger)
+	handler = middleware.LogTrafficMiddleware(handler, baseLogger)
+	handler = middleware.APIKeyMiddleware(handler, baseLogger)
 
 	server := http.Server{
 		Addr:    fmt.Sprintf(":%s", os.Getenv("APP_PORT")),

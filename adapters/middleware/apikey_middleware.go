@@ -1,7 +1,8 @@
-package utils
+package middleware
 
 import (
 	"net/http"
+
 	"github.com/sirupsen/logrus"
 )
 
@@ -19,4 +20,3 @@ func APIKeyMiddleware(next http.Handler, logger *logrus.Logger) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
-
