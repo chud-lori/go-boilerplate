@@ -7,9 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/chud-lori/go-boilerplate/adapters/transport"
 	"github.com/chud-lori/go-boilerplate/domain/entities"
 	"github.com/chud-lori/go-boilerplate/domain/ports"
+	"github.com/chud-lori/go-boilerplate/pkg/logger"
+	"github.com/sirupsen/logrus"
 )
 
 type UserServiceImpl struct {
@@ -42,14 +43,17 @@ func generatePasscode() string {
 	return alphStr + msStr
 }
 
-func (s *UserServiceImpl) Save(c context.Context, request *transport.UserRequest) (*transport.UserResponse, error) {
+func (s *UserServiceImpl) Save(c context.Context, request *entities.User) (*entities.User, error) {
+	logger, _ := c.Value(logger.LoggerContextKey).(logrus.FieldLogger)
 	ctx, cancel := context.WithTimeout(c, s.CtxTimeout)
 	defer cancel()
 
 	tx, err := s.DB.BeginTx(ctx)
 	if err != nil {
+		logger.WithError(err).Error("Failed to begin transaction")
 		return nil, err
 	}
+
 	// handle panic gracefully
 	defer func() {
 		if r := recover(); r != nil || err != nil {
@@ -63,75 +67,71 @@ func (s *UserServiceImpl) Save(c context.Context, request *transport.UserRequest
 		Passcode:   generatePasscode(),
 		Created_at: time.Now(),
 	}
-	user_result, err := s.UserRepository.Save(ctx, tx, &user)
+	result, err := s.UserRepository.Save(ctx, tx, &user)
 
 	if err != nil {
+		logger.WithError(err).Error("Failed to save user")
 		return nil, err
-	}
-
-	user_response := &transport.UserResponse{
-		Id:         user_result.Id,
-		Email:      user_result.Email,
-		Created_at: user_result.Created_at,
 	}
 
 	if err := tx.Commit(); err != nil {
+		logger.WithError(err).Error("Failed to commit transaction")
 		return nil, err
 	}
 
-	return user_response, nil
+	return result, nil
 }
 
-func (s *UserServiceImpl) Update(c context.Context, request *transport.UserRequest) (*transport.UserResponse, error) {
+func (s *UserServiceImpl) Update(c context.Context, request *entities.User) (*entities.User, error) {
+	logger, _ := c.Value(logger.LoggerContextKey).(logrus.FieldLogger)
+
 	ctx, cancel := context.WithTimeout(c, s.CtxTimeout)
 	defer cancel()
 
 	tx, err := s.DB.BeginTx(ctx)
 	if err != nil {
+		logger.WithError(err).Error("Failed to begin transaction")
 		return nil, err
 	}
-	// handle panic gracefully
+
 	defer func() {
 		if r := recover(); r != nil || err != nil {
+			logger.Errorf("Transaction rollback due to error: %v", err)
+			logger.Errorf("Transaction rollback due to panic: %v", r)
 			tx.Rollback()
 		}
 	}()
 
-	user := entities.User{
-		Id:         "",
-		Email:      request.Email,
-		Created_at: time.Now(),
-	}
-
-	user_result, err := s.UserRepository.Update(ctx, tx, &user)
+	result, err := s.UserRepository.Update(ctx, tx, request)
 	if err != nil {
+		logger.WithError(err).Error("Failed to update user")
 		return nil, err
-	}
-
-	user_response := &transport.UserResponse{
-		Id:         user_result.Id,
-		Email:      user_result.Email,
-		Created_at: user_result.Created_at,
 	}
 
 	if err := tx.Commit(); err != nil {
+		logger.WithError(err).Error("Failed to commit transaction")
 		return nil, err
 	}
 
-	return user_response, nil
+	return result, nil
 }
 
 func (s *UserServiceImpl) Delete(c context.Context, id string) error {
+	logger, _ := c.Value(logger.LoggerContextKey).(logrus.FieldLogger)
+
 	ctx, cancel := context.WithTimeout(c, s.CtxTimeout)
 	defer cancel()
 
 	tx, err := s.DB.BeginTx(ctx)
 	if err != nil {
+		logger.WithError(err).Error("Failed to begin transaction")
 		return err
 	}
 	// handle panic gracefully
 	defer func() {
 		if r := recover(); r != nil || err != nil {
+			logger.Errorf("Transaction rollback due to error: %v", err)
+			logger.Errorf("Transaction rollback due to panic: %v", r)
 			tx.Rollback()
 		}
 	}()
@@ -139,74 +139,82 @@ func (s *UserServiceImpl) Delete(c context.Context, id string) error {
 	err = s.UserRepository.Delete(ctx, tx, id)
 
 	if err != nil {
+		logger.WithError(err).Error("Failed to delete user")
 		return err
 	}
 
 	if err := tx.Commit(); err != nil {
+		logger.WithError(err).Error("Failed to commit transaction")
 		return err
 	}
 
 	return nil
 }
 
-func (s *UserServiceImpl) FindById(c context.Context, id string) (*transport.UserResponse, error) {
+func (s *UserServiceImpl) FindById(c context.Context, id string) (*entities.User, error) {
+	logger, _ := c.Value(logger.LoggerContextKey).(logrus.FieldLogger)
+
 	ctx, cancel := context.WithTimeout(c, s.CtxTimeout)
 	defer cancel()
 
 	tx, err := s.DB.BeginTx(ctx)
 	if err != nil {
+		logger.WithError(err).Error("Failed to begin transaction")
 		return nil, err
 	}
 	// handle panic gracefully
 	defer func() {
 		if r := recover(); r != nil || err != nil {
+			logger.Errorf("Transaction rollback due to error: %v", err)
+			logger.Errorf("Transaction rollback due to panic: %v", r)
 			tx.Rollback()
 		}
 	}()
 
-	user_result, err := s.UserRepository.FindById(ctx, tx, id)
+	result, err := s.UserRepository.FindById(ctx, tx, id)
 	if err != nil {
+		logger.WithError(err).Error("Failed to find user by ID")
 		return nil, err
-	}
-
-	user_response := &transport.UserResponse{
-		Id:         user_result.Id,
-		Email:      user_result.Email,
-		Created_at: user_result.Created_at,
 	}
 
 	if err := tx.Commit(); err != nil {
+		logger.WithError(err).Error("Failed to commit transaction")
 		return nil, err
 	}
 
-	return user_response, nil
+	return result, nil
 }
 
-func (s *UserServiceImpl) FindAll(c context.Context) ([]*transport.UserResponse, error) {
+func (s *UserServiceImpl) FindAll(c context.Context) ([]*entities.User, error) {
+	logger, _ := c.Value(logger.LoggerContextKey).(logrus.FieldLogger)
 	ctx, cancel := context.WithTimeout(c, s.CtxTimeout)
 	defer cancel()
 
 	tx, err := s.DB.BeginTx(ctx)
 	if err != nil {
+		logger.WithError(err).Error("Failed to begin transaction")
 		return nil, err
 	}
-	// handle panic gracefully
+
 	defer func() {
 		if r := recover(); r != nil || err != nil {
+			logger.Errorf("Transaction rollback due to error: %v", err)
+			logger.Errorf("Transaction rollback due to panic: %v", r)
 			tx.Rollback()
 		}
 	}()
 
-	users_result, err := s.UserRepository.FindAll(ctx, tx)
+	result, err := s.UserRepository.FindAll(ctx, tx)
 
 	if err != nil {
+		logger.WithError(err).Error("Failed to find all users")
 		return nil, err
 	}
 
-	users_response := make([]*transport.UserResponse, len(users_result))
+	users := make([]*entities.User, len(result))
 
-	for i, user := range users_result {
-		users_response[i] = &transport.UserResponse{
+	for i, user := range result {
+		users[i] = &entities.User{
 			Id:         user.Id,
 			Email:      user.Email,
 			Created_at: user.Created_at,
@@ -214,8 +222,9 @@ func (s *UserServiceImpl) FindAll(c context.Context) ([]*transport.UserResponse,
 	}
 
 	if err := tx.Commit(); err != nil {
+		logger.WithError(err).Error("Failed to commit transaction")
 		return nil, err
 	}
 
-	return users_response, nil
+	return users, nil
 }
