@@ -48,7 +48,7 @@ func (s *UserServiceImpl) Save(c context.Context, user *entities.User) (*entitie
 		return nil, err
 	}
 
-	if err := tx.Commit(); err != nil {
+	if err = tx.Commit(); err != nil {
 		logger.WithError(err).Error("Failed to commit transaction")
 		return nil, err
 	}
@@ -77,17 +77,18 @@ func (s *UserServiceImpl) Update(c context.Context, user *entities.User) (*entit
 	}()
 
 	result, err := s.UserRepository.Update(ctx, tx, user)
+
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, appErrors.ErrUserNotFound) {
 			logger.Errorf("UserID %d not found", user.Id)
-			return nil, appErrors.NewBadRequestError("User not found", err)
+			return nil, appErrors.NewNotFoundError("User not found", err)
 		}
 
 		logger.WithError(err).Error("Database error")
 		return nil, err
 	}
 
-	if err := tx.Commit(); err != nil {
+	if err = tx.Commit(); err != nil {
 		logger.WithError(err).Error("Failed to commit transaction")
 		return nil, err
 	}
