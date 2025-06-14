@@ -9,6 +9,7 @@ import (
 	"github.com/chud-lori/go-boilerplate/domain/entities"
 	"github.com/chud-lori/go-boilerplate/domain/ports"
 	appErrors "github.com/chud-lori/go-boilerplate/pkg/errors"
+	"github.com/chud-lori/go-boilerplate/pkg/logger"
 	"github.com/google/uuid"
 
 	"github.com/sirupsen/logrus"
@@ -19,7 +20,7 @@ type UserController struct {
 }
 
 func (controller *UserController) Create(w http.ResponseWriter, r *http.Request) {
-	logger := r.Context().Value("logger").(*logrus.Entry)
+	logger := r.Context().Value(logger.LoggerContextKey).(*logrus.Entry)
 
 	userRequest := dto.UserRequest{}
 
@@ -63,7 +64,7 @@ func (controller *UserController) Create(w http.ResponseWriter, r *http.Request)
 }
 
 func (controller *UserController) Update(w http.ResponseWriter, r *http.Request) {
-	logger := r.Context().Value("logger").(*logrus.Entry)
+	logger := r.Context().Value(logger.LoggerContextKey).(*logrus.Entry)
 	userRequest := &dto.UserRequest{}
 	userId := r.PathValue("userId")
 
@@ -146,7 +147,7 @@ func (controller *UserController) Delete(w http.ResponseWriter, r *http.Request)
 }
 
 func (c *UserController) FindById(w http.ResponseWriter, r *http.Request) {
-	logger := r.Context().Value("logger").(*logrus.Entry)
+	logger := r.Context().Value(logger.LoggerContextKey).(*logrus.Entry)
 	userId := r.PathValue("userId")
 
 	if _, err := uuid.Parse(userId); err != nil {
@@ -188,7 +189,7 @@ func (c *UserController) FindById(w http.ResponseWriter, r *http.Request) {
 }
 
 func (controller *UserController) FindAll(w http.ResponseWriter, r *http.Request) {
-	logger, _ := r.Context().Value("logger").(*logrus.Entry)
+	logger, _ := r.Context().Value(logger.LoggerContextKey).(*logrus.Entry)
 
 	users, err := controller.UserService.FindAll(r.Context())
 
