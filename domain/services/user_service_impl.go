@@ -22,7 +22,7 @@ type UserServiceImpl struct {
 	CtxTimeout time.Duration
 }
 
-func (s *UserServiceImpl) Save(c context.Context, request *entities.User) (*entities.User, error) {
+func (s *UserServiceImpl) Save(c context.Context, user *entities.User) (*entities.User, error) {
 	logger, _ := c.Value(logger.LoggerContextKey).(logrus.FieldLogger)
 	ctx, cancel := context.WithTimeout(c, s.CtxTimeout)
 	defer cancel()
@@ -40,8 +40,8 @@ func (s *UserServiceImpl) Save(c context.Context, request *entities.User) (*enti
 		}
 	}()
 
-	request.Passcode = auth.GeneratePasscode()
-	result, err := s.UserRepository.Save(ctx, tx, request)
+	user.Passcode = auth.GeneratePasscode()
+	result, err := s.UserRepository.Save(ctx, tx, user)
 
 	if err != nil {
 		logger.WithError(err).Error("Failed to save user")
@@ -56,7 +56,7 @@ func (s *UserServiceImpl) Save(c context.Context, request *entities.User) (*enti
 	return result, nil
 }
 
-func (s *UserServiceImpl) Update(c context.Context, request *entities.User) (*entities.User, error) {
+func (s *UserServiceImpl) Update(c context.Context, user *entities.User) (*entities.User, error) {
 	logger, _ := c.Value(logger.LoggerContextKey).(logrus.FieldLogger)
 
 	ctx, cancel := context.WithTimeout(c, s.CtxTimeout)
@@ -76,10 +76,10 @@ func (s *UserServiceImpl) Update(c context.Context, request *entities.User) (*en
 		}
 	}()
 
-	result, err := s.UserRepository.Update(ctx, tx, request)
+	result, err := s.UserRepository.Update(ctx, tx, user)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			logger.Errorf("UserID %d not found", request.Id)
+			logger.Errorf("UserID %d not found", user.Id)
 			return nil, appErrors.NewBadRequestError("User not found", err)
 		}
 
