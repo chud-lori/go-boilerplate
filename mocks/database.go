@@ -8,21 +8,6 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-type MockRow struct {
-	scanFunc func(dest ...interface{}) error
-}
-
-func (m *MockRow) Scan(dest ...interface{}) error {
-	if m.scanFunc != nil {
-		return m.scanFunc(dest...)
-	}
-	return nil
-}
-
-func NewMockRowWithScan(scanFunc func(dest ...interface{}) error) *sql.Row {
-	return &sql.Row{}
-}
-
 type MockTransaction struct {
 	mock.Mock
 }

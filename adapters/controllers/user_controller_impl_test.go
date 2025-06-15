@@ -164,7 +164,7 @@ func TestUserController_Update_UserNotFound(t *testing.T) {
 		Passcode: "IJHD9782",
 	}
 
-	mockError := appErrors.NewBadRequestError("User not found", nil)
+	mockError := appErrors.NewNotFoundError("User not found", nil)
 	mockService.On("Update", mock.Anything, user).Return(nil, mockError)
 
 	controller.Update(rec, req)

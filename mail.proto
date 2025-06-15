@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package mail;
 
-option go_package = "./mail_grpc";
+option go_package = "./proto";
 
 
 service Mail {
