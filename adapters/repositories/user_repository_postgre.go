@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
@@ -44,7 +45,7 @@ func (repository *UserRepositoryPostgre) Update(ctx context.Context, tx ports.Tr
 
 	query := "UPDATE users SET email = $1, passcode = $2 WHERE id = $3"
 	result, err := tx.ExecContext(ctx, query, user.Email, user.Passcode, user.Id)
-	logger.Debugf("REPO %v", err)
+
 	if err != nil {
 		logger.WithError(err).Error("Error Update")
 		return nil, err
@@ -85,8 +86,8 @@ func (r *UserRepositoryPostgre) FindById(ctx context.Context, tx ports.Transacti
 	err := tx.QueryRowContext(ctx, query, id).Scan(&user.Id, &user.Email, &user.Created_at)
 
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("user not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, appErrors.ErrUserNotFound
 		}
 		return nil, err
 	}
