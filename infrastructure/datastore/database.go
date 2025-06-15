@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"net/url"
 	"time"
+
 	"github.com/chud-lori/go-boilerplate/domain/ports"
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
@@ -16,13 +17,13 @@ var _ ports.Database = (*Database)(nil)
 
 // Database implements DB interface
 type Database struct {
-    db *sql.DB
+	db *sql.DB
 }
 
 func NewDatabase(dbURL string, logger *logrus.Logger) (ports.Database, error) {
 	parseDBUrl, _ := url.Parse(dbURL)
 	dbLogger := logger.WithFields(logrus.Fields{
-		"layer": "database",
+		"layer":  "database",
 		"driver": parseDBUrl.Scheme,
 	})
 	db, err := sql.Open(parseDBUrl.Scheme, dbURL)
@@ -62,7 +63,7 @@ func (p *Database) Close() error {
 
 // Transaction implements Transaction interface
 type Transaction struct {
-    tx *sql.Tx
+	tx *sql.Tx
 }
 
 func (t *Transaction) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {

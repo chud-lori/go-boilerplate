@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 
 	"time"
@@ -22,7 +21,7 @@ type UserServiceImpl struct {
 	CtxTimeout time.Duration
 }
 
-func (s *UserServiceImpl) Save(c context.Context, request *entities.User) (*entities.User, error) {
+func (s *UserServiceImpl) Save(c context.Context, user *entities.User) (*entities.User, error) {
 	logger, _ := c.Value(logger.LoggerContextKey).(logrus.FieldLogger)
 	ctx, cancel := context.WithTimeout(c, s.CtxTimeout)
 	defer cancel()
@@ -40,15 +39,15 @@ func (s *UserServiceImpl) Save(c context.Context, request *entities.User) (*enti
 		}
 	}()
 
-	request.Passcode = auth.GeneratePasscode()
-	result, err := s.UserRepository.Save(ctx, tx, request)
+	user.Passcode = auth.GeneratePasscode()
+	result, err := s.UserRepository.Save(ctx, tx, user)
 
 	if err != nil {
 		logger.WithError(err).Error("Failed to save user")
 		return nil, err
 	}
 
-	if err := tx.Commit(); err != nil {
+	if err = tx.Commit(); err != nil {
 		logger.WithError(err).Error("Failed to commit transaction")
 		return nil, err
 	}
@@ -56,7 +55,7 @@ func (s *UserServiceImpl) Save(c context.Context, request *entities.User) (*enti
 	return result, nil
 }
 
-func (s *UserServiceImpl) Update(c context.Context, request *entities.User) (*entities.User, error) {
+func (s *UserServiceImpl) Update(c context.Context, user *entities.User) (*entities.User, error) {
 	logger, _ := c.Value(logger.LoggerContextKey).(logrus.FieldLogger)
 
 	ctx, cancel := context.WithTimeout(c, s.CtxTimeout)
@@ -76,18 +75,19 @@ func (s *UserServiceImpl) Update(c context.Context, request *entities.User) (*en
 		}
 	}()
 
-	result, err := s.UserRepository.Update(ctx, tx, request)
+	result, err := s.UserRepository.Update(ctx, tx, user)
+
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			logger.Errorf("UserID %d not found", request.Id)
-			return nil, appErrors.NewBadRequestError("User not found", err)
+		if errors.Is(err, appErrors.ErrUserNotFound) {
+			logger.Errorf("UserID %d not found", user.Id)
+			return nil, appErrors.NewNotFoundError("User not found", err)
 		}
 
 		logger.WithError(err).Error("Database error")
 		return nil, err
 	}
 
-	if err := tx.Commit(); err != nil {
+	if err = tx.Commit(); err != nil {
 		logger.WithError(err).Error("Failed to commit transaction")
 		return nil, err
 	}
@@ -115,21 +115,14 @@ func (s *UserServiceImpl) Delete(c context.Context, id string) error {
 		}
 	}()
 
-	_, err = s.UserRepository.FindById(ctx, tx, id)
+	err = s.UserRepository.Delete(ctx, tx, id)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, appErrors.ErrUserNotFound) {
 			logger.Errorf("UserID %d not found", id)
-			return appErrors.NewBadRequestError("User not found", err)
+			return appErrors.NewNotFoundError("User not found", err)
 		}
 
-		logger.WithError(err).Error("Failed to find userId: ", id)
-		return err
-	}
-
-	err = s.UserRepository.Delete(ctx, tx, id)
-
-	if err != nil {
-		logger.WithError(err).Error("Failed to delete user")
+		logger.WithError(err).Error("Database error")
 		return err
 	}
 
@@ -163,9 +156,9 @@ func (s *UserServiceImpl) FindById(c context.Context, id string) (*entities.User
 
 	result, err := s.UserRepository.FindById(ctx, tx, id)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, appErrors.ErrUserNotFound) {
 			logger.Errorf("UserID %d not found", id)
-			return nil, appErrors.NewBadRequestError("User not found", err)
+			return nil, appErrors.NewNotFoundError("User not found", err)
 		}
 
 		logger.WithError(err).Error("Database error")

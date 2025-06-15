@@ -3,11 +3,13 @@ package repositories
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/chud-lori/go-boilerplate/domain/entities"
 	"github.com/chud-lori/go-boilerplate/domain/ports"
+	appErrors "github.com/chud-lori/go-boilerplate/pkg/errors"
 	"github.com/chud-lori/go-boilerplate/pkg/logger"
 
 	"github.com/sirupsen/logrus"
@@ -19,6 +21,7 @@ type UserRepositoryPostgre struct {
 
 func (repository *UserRepositoryPostgre) Save(ctx context.Context, tx ports.Transaction, user *entities.User) (*entities.User, error) {
 	logger, _ := ctx.Value(logger.LoggerContextKey).(logrus.FieldLogger)
+
 	var id string
 	var createdAt time.Time
 	query := `
@@ -38,10 +41,21 @@ func (repository *UserRepositoryPostgre) Save(ctx context.Context, tx ports.Tran
 }
 
 func (repository *UserRepositoryPostgre) Update(ctx context.Context, tx ports.Transaction, user *entities.User) (*entities.User, error) {
+	logger, _ := ctx.Value(logger.LoggerContextKey).(logrus.FieldLogger)
+
 	query := "UPDATE users SET email = $1, passcode = $2 WHERE id = $3"
-	_, err := tx.ExecContext(ctx, query, user.Email, user.Passcode, user.Id)
+	result, err := tx.ExecContext(ctx, query, user.Email, user.Passcode, user.Id)
+
 	if err != nil {
+		logger.WithError(err).Error("Error Update")
 		return nil, err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+
+	if rowsAffected == 0 {
+		logger.Error("User ID %s not found", user.Id)
+		return nil, appErrors.ErrUserNotFound
 	}
 
 	return user, nil
@@ -60,7 +74,7 @@ func (repository *UserRepositoryPostgre) Delete(ctx context.Context, tx ports.Tr
 	}
 
 	if rowsAffected == 0 {
-		return fmt.Errorf("user not found")
+		return appErrors.ErrUserNotFound
 	}
 
 	return nil
@@ -72,8 +86,8 @@ func (r *UserRepositoryPostgre) FindById(ctx context.Context, tx ports.Transacti
 	err := tx.QueryRowContext(ctx, query, id).Scan(&user.Id, &user.Email, &user.Created_at)
 
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("user not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, appErrors.ErrUserNotFound
 		}
 		return nil, err
 	}

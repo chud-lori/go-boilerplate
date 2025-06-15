@@ -7,6 +7,9 @@ RUN go mod download
 COPY . .
 RUN go build -o main cmd/main.go
 
+# Run tests before building
+RUN go test ./... -v -cover
+
 # Final stage for a smaller production image
 FROM alpine:latest
 

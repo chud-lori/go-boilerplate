@@ -12,14 +12,25 @@ import (
 	"github.com/chud-lori/go-boilerplate/adapters/middleware"
 	"github.com/chud-lori/go-boilerplate/adapters/repositories"
 	"github.com/chud-lori/go-boilerplate/adapters/web"
+	_ "github.com/chud-lori/go-boilerplate/docs"
 	"github.com/chud-lori/go-boilerplate/domain/services"
 	"github.com/chud-lori/go-boilerplate/infrastructure/datastore"
 	"github.com/chud-lori/go-boilerplate/internal/utils"
 	"github.com/chud-lori/go-boilerplate/pkg/logger"
+	httpSwagger "github.com/swaggo/http-swagger"
 
 	"github.com/joho/godotenv"
 )
 
+// @title Go Boilerplate API
+// @version 1.0
+// @description test.
+// @termsOfService http://swagger.io/terms/
+
+// @license.name Apache 2.0
+// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @BasePath /api
 func main() {
 
 	err := godotenv.Load()
@@ -48,6 +59,9 @@ func main() {
 	}
 
 	router := http.NewServeMux()
+	if os.Getenv("APP_ENV") != "production" {
+		router.Handle("/docs/", httpSwagger.WrapHandler)
+	}
 
 	web.UserRouter(userController, router)
 

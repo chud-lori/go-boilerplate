@@ -1,0 +1,35 @@
+name: Run Go Tests on Merge to Main
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    name: Run Go Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.0' # Change if you use a different Go version
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Run tests
+        run: go test ./... -v -coverprofile=coverage.out
+
+      - name: Upload test coverage report (optional)
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.out

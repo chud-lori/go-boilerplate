@@ -9,6 +9,7 @@ import (
 	"github.com/chud-lori/go-boilerplate/domain/entities"
 	"github.com/chud-lori/go-boilerplate/domain/ports"
 	appErrors "github.com/chud-lori/go-boilerplate/pkg/errors"
+	"github.com/chud-lori/go-boilerplate/pkg/logger"
 	"github.com/google/uuid"
 
 	"github.com/sirupsen/logrus"
@@ -19,7 +20,8 @@ type UserController struct {
 }
 
 func (controller *UserController) Create(w http.ResponseWriter, r *http.Request) {
-	logger := r.Context().Value("logger").(*logrus.Entry)
+	ctx := r.Context()
+	logger := ctx.Value(logger.LoggerContextKey).(*logrus.Entry)
 
 	userRequest := dto.UserRequest{}
 
@@ -38,7 +40,7 @@ func (controller *UserController) Create(w http.ResponseWriter, r *http.Request)
 		Email: userRequest.Email,
 	}
 
-	result, err := controller.UserService.Save(r.Context(), userPayload)
+	result, err := controller.UserService.Save(ctx, userPayload)
 
 	if err != nil {
 		logger.Error("Failed to create user: ", err)
@@ -63,7 +65,8 @@ func (controller *UserController) Create(w http.ResponseWriter, r *http.Request)
 }
 
 func (controller *UserController) Update(w http.ResponseWriter, r *http.Request) {
-	logger := r.Context().Value("logger").(*logrus.Entry)
+	ctx := r.Context()
+	logger := ctx.Value(logger.LoggerContextKey).(*logrus.Entry)
 	userRequest := &dto.UserRequest{}
 	userId := r.PathValue("userId")
 
@@ -83,7 +86,7 @@ func (controller *UserController) Update(w http.ResponseWriter, r *http.Request)
 		Passcode: userRequest.Passcode,
 	}
 
-	userResponse, err := controller.UserService.Update(r.Context(), userPayload)
+	userResponse, err := controller.UserService.Update(ctx, userPayload)
 
 	if err != nil {
 		var appErr *appErrors.AppError
@@ -114,9 +117,10 @@ func (controller *UserController) Update(w http.ResponseWriter, r *http.Request)
 }
 
 func (controller *UserController) Delete(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	userId := r.PathValue("userId")
 
-	err := controller.UserService.Delete(r.Context(), userId)
+	err := controller.UserService.Delete(ctx, userId)
 
 	if err != nil {
 		var appErr *appErrors.AppError
@@ -146,7 +150,8 @@ func (controller *UserController) Delete(w http.ResponseWriter, r *http.Request)
 }
 
 func (c *UserController) FindById(w http.ResponseWriter, r *http.Request) {
-	logger := r.Context().Value("logger").(*logrus.Entry)
+	ctx := r.Context()
+	logger := ctx.Value(logger.LoggerContextKey).(*logrus.Entry)
 	userId := r.PathValue("userId")
 
 	if _, err := uuid.Parse(userId); err != nil {
@@ -159,7 +164,7 @@ func (c *UserController) FindById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := c.UserService.FindById(r.Context(), userId)
+	user, err := c.UserService.FindById(ctx, userId)
 	if err != nil {
 		var appErr *appErrors.AppError
 		if errors.As(err, &appErr) {
@@ -188,17 +193,18 @@ func (c *UserController) FindById(w http.ResponseWriter, r *http.Request) {
 }
 
 func (controller *UserController) FindAll(w http.ResponseWriter, r *http.Request) {
-	logger, _ := r.Context().Value("logger").(*logrus.Entry)
+	ctx := r.Context()
+	logger, _ := ctx.Value(logger.LoggerContextKey).(*logrus.Entry)
 
-	users, err := controller.UserService.FindAll(r.Context())
+	users, err := controller.UserService.FindAll(ctx)
 
 	if err != nil {
 		logger.Error("Error Find All user: ", err)
 		helper.WriteResponse(w, dto.WebResponse{
-			Message: "Failed Get All Users",
+			Message: "An unexpected error occurred",
 			Status:  0,
 			Data:    nil,
-		}, http.StatusNotFound)
+		}, http.StatusInternalServerError)
 		return
 	}
 
