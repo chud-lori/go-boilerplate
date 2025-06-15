@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 
 	"time"
@@ -116,21 +115,14 @@ func (s *UserServiceImpl) Delete(c context.Context, id string) error {
 		}
 	}()
 
-	_, err = s.UserRepository.FindById(ctx, tx, id)
+	err = s.UserRepository.Delete(ctx, tx, id)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, appErrors.ErrUserNotFound) {
 			logger.Errorf("UserID %d not found", id)
-			return appErrors.NewBadRequestError("User not found", err)
+			return appErrors.NewNotFoundError("User not found", err)
 		}
 
-		logger.WithError(err).Error("Failed to find userId: ", id)
-		return err
-	}
-
-	err = s.UserRepository.Delete(ctx, tx, id)
-
-	if err != nil {
-		logger.WithError(err).Error("Failed to delete user")
+		logger.WithError(err).Error("Database error")
 		return err
 	}
 
@@ -164,9 +156,9 @@ func (s *UserServiceImpl) FindById(c context.Context, id string) (*entities.User
 
 	result, err := s.UserRepository.FindById(ctx, tx, id)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, appErrors.ErrUserNotFound) {
 			logger.Errorf("UserID %d not found", id)
-			return nil, appErrors.NewBadRequestError("User not found", err)
+			return nil, appErrors.NewNotFoundError("User not found", err)
 		}
 
 		logger.WithError(err).Error("Database error")
