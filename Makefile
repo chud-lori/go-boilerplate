@@ -17,7 +17,7 @@ deps:
 build:
 	@echo "Building binary..."
 	@mkdir -p $(BUILD_DIR)
-	@go build -o $(BUILD_DIR)/$(APP_NAME) ./cmd/main.go
+	@go build -o $(BUILD_DIR)/$(APP_NAME) ./cmd/api/main.go
 	@echo "Build successful. Binary: $(BUILD_DIR)/$(APP_NAME)"
 
 run: build
@@ -30,7 +30,7 @@ clean:
 
 swagger:
 	@echo "Generating Swagger documentation..."
-	@swag init -g cmd/main.go
+	@swag init -g cmd/api/main.go
 
 # ====== DOCKER COMMANDS ======
 
