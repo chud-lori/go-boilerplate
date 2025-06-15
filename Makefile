@@ -1,0 +1,82 @@
+APP_NAME := service-app
+BUILD_DIR := bin
+DOCKER_IMAGE := service-app
+DOCKER_COMPOSE := docker-compose.yaml
+
+all: test build run
+
+test:
+	@echo "Running tests..."
+	@go test ./... -v -cover
+	@echo "Tests passed."
+
+deps:
+	@echo "Downloading dependencies..."
+	@go mod download
+
+build:
+	@echo "Building binary..."
+	@mkdir -p $(BUILD_DIR)
+	@go build -o $(BUILD_DIR)/$(APP_NAME) ./cmd/main.go
+	@echo "Build successful. Binary: $(BUILD_DIR)/$(APP_NAME)"
+
+run: build
+	@echo "Running application..."
+	@./$(BUILD_DIR)/$(APP_NAME)
+
+clean:
+	@echo "Cleaning up..."
+	@rm -rf $(BUILD_DIR)
+
+swagger:
+	@echo "Generating Swagger documentation..."
+	@swag init -g cmd/main.go
+
+# ====== DOCKER COMMANDS ======
+
+docker-build:
+	@echo "Building Docker image..."
+	@docker build -t $(DOCKER_IMAGE) .
+	@echo "Docker image built: $(DOCKER_IMAGE)"
+
+docker-test:
+	@echo "Running tests inside Docker container..."
+	@docker run --rm -v $$PWD:/app -w /app golang:1.22.2-alpine \
+		sh -c "apk add --no-cache git && go mod download && go test ./... -v -cover"
+	@echo "Docker test run completed."
+
+up:
+	@echo "Starting Docker Compose stack..."
+	@docker compose -f $(DOCKER_COMPOSE) up --build
+
+down:
+	@echo "Stopping Docker Compose stack..."
+	@docker compose -f $(DOCKER_COMPOSE) down
+
+rebuild:
+	@echo "Rebuilding Docker stack..."
+	@make down
+	@make docker-build
+	@make up
+
+# ====== HELP ======
+
+help:
+	@echo "Usage:"
+	@echo "  make            Run tests, build, and start the app"
+	@echo "  make test       Run all unit tests"
+	@echo "  make deps       Download Go dependencies"
+	@echo "  make build      Build the Go binary into $(BUILD_DIR)/$(APP_NAME)"
+	@echo "  make run        Run the application locally"
+	@echo "  make clean      Remove built binaries"
+	@echo "  make swagger    Generate Swagger documentation"
+	@echo ""
+	@echo "Docker targets:"
+	@echo "  make docker-build   Build Docker image (also runs tests inside Dockerfile)"
+	@echo "  make docker-test    Run tests in clean Go container"
+	@echo "  make up             Start full Docker Compose stack"
+	@echo "  make down           Stop Docker Compose stack"
+	@echo "  make rebuild        Full Docker rebuild and restart"
+
+.PHONY: all test deps build swagger run clean help \
+        docker-build docker-test up down rebuild
