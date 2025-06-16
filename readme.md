@@ -10,13 +10,15 @@ A modern, production-ready Go boilerplate for building scalable web APIs and mic
 - **REST API**: User CRUD endpoints with DTOs, controllers, and routing.
 - **gRPC Support**: Example gRPC service (`Mail`) with protobuf definitions and testable client/server.
 - **PostgreSQL Integration**: Repository pattern with transaction support, migrations, and test containers for DB testing.
+- **Database Migrations**: Built-in support with [golang-migrate](https://github.com/golang-migrate/migrate).
 - **Middleware**: Logging, API key authentication, and request context propagation.
 - **Logging**: Structured logging with Logrus, configurable log levels.
 - **Error Handling**: Centralized error types and helpers.
 - **Testing**: Extensive unit and integration tests with mocks and test containers.
 - **Dockerized**: Dockerfile and `docker-compose.yml` for local development and deployment.
 - **Observability**: Loki/Promtail/Grafana stack for log aggregation and visualization.
-- **Swagger Docs**: Built-in support for Swagger API documentation.
+- **Swagger Docs**: Built-in support for Swagger API documentation with [Swag CLI](https://github.com/swaggo/swag).
+
 
 ---
 
@@ -32,6 +34,7 @@ A modern, production-ready Go boilerplate for building scalable web APIs and mic
 ├── infrastructure/     # Database implementation
 ├── internal/           # Internal utilities and test helpers
 ├── mocks/              # Auto-generated and hand-written mocks for testing
+├── migrations/              # Migrations scheme
 ├── pkg/                # Shared packages (auth, logger, errors)
 ├── proto/              # Protobuf generated files
 ├── .github/            # CI workflows
@@ -40,7 +43,7 @@ A modern, production-ready Go boilerplate for building scalable web APIs and mic
 ├── db.sql              # DB schema
 ├── mail.proto          # Protobuf definition
 ├── Makefile
-├── .env, keys.env      # Environment variables
+├── .env.example      # Environment variables
 └── readme.md
 ```
 
@@ -74,6 +77,43 @@ A modern, production-ready Go boilerplate for building scalable web APIs and mic
    make swagger
    ```
    Then access via `/swagger/index.html` (if enabled).
+
+6. **Run Migrations**
+   Migrations are managed using `golang-migrate` via the Makefile:
+
+   #### Install `migrate` CLI:
+   ```sh
+   brew install golang-migrate  # macOS
+   ```
+   Or download from: https://github.com/golang-migrate/migrate/releases
+
+   #### Create a new migration
+   ```sh
+   make migration-create name=create_users_table
+   ```
+
+   #### Apply migrations
+   ```sh
+   make migration-up
+   ```
+
+   #### Rollback migrations
+   ```sh
+   make migration-down
+   ```
+
+**Regenerate Swagger Docs**
+   If you update route annotations:
+
+   #### Install `swag` CLI:
+   ```sh
+   go install github.com/swaggo/swag/cmd/swag@latest
+   ```
+
+   #### Then run:
+   ```sh
+   make swagger
+   ```
 
 ### Running Tests
 
