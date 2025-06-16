@@ -18,7 +18,8 @@ func APIKeyMiddleware(next http.Handler, logger *logrus.Logger) http.Handler {
 			next.ServeHTTP(w, r)
 			return
 		}
-		apiKey := r.Header.Get("x-api-key")
+		apiKey := r.Header.Get("X-API-KEY")
+
 		if apiKey != os.Getenv("API_KEY") {
 			mwLogger.Error("Invalid API KEY")
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
