@@ -24,13 +24,14 @@ import (
 
 // @title Go Boilerplate API
 // @version 1.0
-// @description test.
-// @termsOfService http://swagger.io/terms/
-
-// @license.name Apache 2.0
-// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
+// @description A modern, production-ready Go boilerplate for building scalable web APIs and microservices. This project includes best practices for clean architecture, modularity, testing, and observability.
 
 // @BasePath /api
+
+// @securityDefinitions.apiKey ApiKeyAuth
+// @type apiKey
+// @in header
+// @name X-API-KEY
 func main() {
 
 	err := godotenv.Load()
