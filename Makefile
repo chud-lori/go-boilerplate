@@ -1,9 +1,23 @@
+ifneq (,$(wildcard ./.env))
+    include .env
+    export
+endif
+
 APP_NAME := service-app
 BUILD_DIR := bin
 DOCKER_IMAGE := service-app
 DOCKER_COMPOSE := docker-compose.yaml
 
 all: test build run
+
+migration-create:
+	migrate create -ext sql -dir migrations -seq $(name)
+
+migration-up:
+	migrate -path migrations -database "${DB_URL}" up
+
+migration-down:
+	migrate -path migrations -database "${DB_URL}" down
 
 test:
 	@echo "Running tests..."
@@ -71,6 +85,11 @@ help:
 	@echo "  make clean      Remove built binaries"
 	@echo "  make swagger    Generate Swagger documentation"
 	@echo ""
+	@echo "Migration targets:"
+	@echo "  make migration-create name=your_migration_name   Create a new migration file"
+	@echo "  make migration-up                                Apply all up migrations"
+	@echo "  make migration-down                              Revert the last migration"
+	@echo ""
 	@echo "Docker targets:"
 	@echo "  make docker-build   Build Docker image (also runs tests inside Dockerfile)"
 	@echo "  make docker-test    Run tests in clean Go container"
@@ -79,4 +98,5 @@ help:
 	@echo "  make rebuild        Full Docker rebuild and restart"
 
 .PHONY: all test deps build swagger run clean help \
-        docker-build docker-test up down rebuild
+        docker-build docker-test up down rebuild migration-create \
+		migration-up migration-down
