@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/chud-lori/go-boilerplate/domain/ports"
 	"github.com/chud-lori/go-boilerplate/infrastructure/datastore"
@@ -13,32 +14,19 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
+
+	// Import the migrate library and its drivers
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres" // PostgreSQL database driver
+	_ "github.com/golang-migrate/migrate/v4/source/file"       // File source driver
 )
 
-// func SetupTestDB(t *testing.T) ports.Database {
-// 	err := godotenv.Load("../../.env.test")
-// 	require.NoError(t, err, "failed to load .env.test")
-
-// 	dbURL := os.Getenv("DB_URL")
-// 	require.NotEmpty(t, dbURL, "DB_URL must be set in .env.test")
-
-// 	baseLogger := logrus.New()
-// 	db, err := datastore.NewDatabase(dbURL, baseLogger)
-// 	require.NoError(t, err, "failed to connect to test database")
-
-// 	return db
-// }
-
-// func SetupTestTx(t *testing.T, db ports.Database) ports.Transaction {
-// 	ctx := context.Background()
-// 	tx, err := db.BeginTx(ctx)
-// 	require.NoError(t, err, "failed to begin transaction")
-// 	return tx
-// }
-
 func SetupTestDBWithTestcontainers(t *testing.T) (ports.Database, func()) {
-	ctx := context.Background()
+	// Use a context with a timeout for container operations
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
 
+	// YOUR ORIGINAL CONTAINER SETUP - KEPT AS IS
 	req := testcontainers.ContainerRequest{
 		Image:        "postgres:16",
 		ExposedPorts: []string{"5432/tcp"},
@@ -70,34 +58,40 @@ func SetupTestDBWithTestcontainers(t *testing.T) (ports.Database, func()) {
 	db, err := datastore.NewDatabase(dsn, logger)
 	require.NoError(t, err)
 
-	// Create schema
-	tx, err := db.BeginTx(ctx)
-	require.NoError(t, err)
-	_, err = tx.ExecContext(ctx, `
-		CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-		CREATE TABLE IF NOT EXISTS users (
-			id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-			email VARCHAR(255) UNIQUE NOT NULL,
-			passcode VARCHAR(255),
-			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-		);
-	`)
-	require.NoError(t, err)
-	require.NoError(t, tx.Commit())
+	// --- APPLY MIGRATIONS USING GOLANG-MIGRATE ---
+	// Construct the source URL for your migration files.
+	// This assumes your migrations are in a directory named 'migrations'
+	// relative to where your tests are being executed.
+	migrationSourceURL := "file://../../migrations"
 
-	// Cleanup
+	m, err := migrate.New(
+		migrationSourceURL,
+		dsn,
+	)
+	require.NoError(t, err, "Failed to create migrate instance")
+
+	// Apply all up migrations
+	err = m.Up()
+	if err != nil && err != migrate.ErrNoChange {
+		// ErrNoChange means no migrations were applied, which is often fine.
+		// Any other error should cause the test to fail.
+		require.NoError(t, err, "Failed to apply database migrations")
+	}
+	// --- END APPLY MIGRATIONS ---
+
+	// Cleanup function
 	terminate := func() {
-		db.Close()
-		container.Terminate(ctx)
+		// Close your database connection
+		if db != nil {
+			db.Close()
+		}
+		// Terminate the testcontainer
+		if container != nil {
+			timeoutCtx, cancelTimeout := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancelTimeout()
+			container.Terminate(timeoutCtx)
+		}
 	}
 
 	return db, terminate
 }
-
-// SetupTestTx opens a transaction for testing.
-// func SetupTestTx(t *testing.T, db *sql.DB) *sql.Tx {
-// 	t.Helper()
-// 	tx, err := db.Begin()
-// 	require.NoError(t, err, "failed to begin tx")
-// 	return tx
-// }

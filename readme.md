@@ -10,13 +10,15 @@ A modern, production-ready Go boilerplate for building scalable web APIs and mic
 - **REST API**: User CRUD endpoints with DTOs, controllers, and routing.
 - **gRPC Support**: Example gRPC service (`Mail`) with protobuf definitions and testable client/server.
 - **PostgreSQL Integration**: Repository pattern with transaction support, migrations, and test containers for DB testing.
+- **Database Migrations**: Built-in support with [golang-migrate](https://github.com/golang-migrate/migrate).
 - **Middleware**: Logging, API key authentication, and request context propagation.
 - **Logging**: Structured logging with Logrus, configurable log levels.
 - **Error Handling**: Centralized error types and helpers.
 - **Testing**: Extensive unit and integration tests with mocks and test containers.
 - **Dockerized**: Dockerfile and `docker-compose.yml` for local development and deployment.
 - **Observability**: Loki/Promtail/Grafana stack for log aggregation and visualization.
-- **Swagger Docs**: Built-in support for Swagger API documentation.
+- **Swagger Docs**: Built-in support for Swagger API documentation with [Swag CLI](https://github.com/swaggo/swag).
+
 
 ---
 
@@ -24,23 +26,42 @@ A modern, production-ready Go boilerplate for building scalable web APIs and mic
 
 ```
 .
-├── adapters/           # Controllers, middleware, repositories, web routes & DTOs
-├── cmd/                # Entrypoint (main.go)
-├── config/             # Configuration files
-├── domain/             # Entities, ports (interfaces), and services
-├── grpc_service/       # gRPC client/server logic
-├── infrastructure/     # Database implementation
-├── internal/           # Internal utilities and test helpers
-├── mocks/              # Auto-generated and hand-written mocks for testing
-├── pkg/                # Shared packages (auth, logger, errors)
-├── proto/              # Protobuf generated files
+├── adapters                  # Application layer interfaces to external world
+│   ├── controllers           # HTTP request handlers
+│   ├── middleware            # HTTP middleware (e.g., auth, logging)
+│   ├── repositories          # Database access interfaces
+│   └── web
+│       ├── dto               # Request/response data transfer objects
+│       └── helper            # Web helpers (e.g., response formatting)
+├── bin                       # Compiled binaries
+├── cmd
+│   └── api                   # Application entrypoint (main.go)
+├── config                    # Application configuration management
+├── docs                      # Generated documentation (Swagger, etc.)
+├── domain                    # Business logic layer
+│   ├── entities              # Core business entities
+│   ├── ports                 # Interfaces for input/output layers
+│   └── services              # Business use cases
+├── grpc_service              # gRPC server/client logic and implementation
+├── infrastructure
+│   └── datastore             # Concrete implementation of DB or other infrastructure
+├── internal
+│   ├── testutils             # Shared testing utilities
+│   └── utils                 # Internal helper functions
+├── migrations                # SQL migration files (used by golang-migrate)
+├── mocks                     # Auto-generated and custom mocks for testing
+├── pkg
+│   ├── auth                  # Authentication-related utilities
+│   ├── errors                # Custom error types and wrappers
+│   └── logger                # Logging setup and utilities
+├── proto                     # Protobuf definitions and generated files
 ├── .github/            # CI workflows
 ├── Dockerfile
 ├── docker-compose.yml
 ├── db.sql              # DB schema
 ├── mail.proto          # Protobuf definition
 ├── Makefile
-├── .env, keys.env      # Environment variables
+├── .env.example      # Environment variables
 └── readme.md
 ```
 
@@ -74,6 +95,43 @@ A modern, production-ready Go boilerplate for building scalable web APIs and mic
    make swagger
    ```
    Then access via `/swagger/index.html` (if enabled).
+
+6. **Run Migrations**
+   Migrations are managed using `golang-migrate` via the Makefile:
+
+   #### Install `migrate` CLI:
+   ```sh
+   brew install golang-migrate  # macOS
+   ```
+   Or download from: https://github.com/golang-migrate/migrate/releases
+
+   #### Create a new migration
+   ```sh
+   make migration-create name=create_users_table
+   ```
+
+   #### Apply migrations
+   ```sh
+   make migration-up
+   ```
+
+   #### Rollback migrations
+   ```sh
+   make migration-down
+   ```
+
+**Regenerate Swagger Docs**
+   If you update route annotations:
+
+   #### Install `swag` CLI:
+   ```sh
+   go install github.com/swaggo/swag/cmd/swag@latest
+   ```
+
+   #### Then run:
+   ```sh
+   make swagger
+   ```
 
 ### Running Tests
 
