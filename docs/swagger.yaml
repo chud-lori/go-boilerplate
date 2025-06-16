@@ -1,12 +1,218 @@
 basePath: /api
+definitions:
+  dto.UserRequest:
+    description: Account creation payload
+    properties:
+      email:
+        maxLength: 200
+        minLength: 1
+        type: string
+      passcode:
+        maxLength: 8
+        minLength: 1
+        type: string
+    required:
+    - email
+    type: object
+  dto.UserResponse:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+    type: object
+  dto.WebResponse:
+    properties:
+      data: {}
+      message:
+        type: string
+      status:
+        type: integer
+    type: object
 info:
   contact: {}
-  description: test.
-  license:
-    name: Apache 2.0
-    url: http://www.apache.org/licenses/LICENSE-2.0.html
-  termsOfService: http://swagger.io/terms/
+  description: A modern, production-ready Go boilerplate for building scalable web
+    APIs and microservices. This project includes best practices for clean architecture,
+    modularity, testing, and observability.
   title: Go Boilerplate API
   version: "1.0"
-paths: {}
+paths:
+  /user:
+    get:
+      description: Retrieves a list of all users.
+      operationId: get-all-users
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully retrieved all users
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.WebResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.UserResponse'
+                  type: array
+              type: object
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.WebResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get all users
+      tags:
+      - Users
+    post:
+      consumes:
+      - application/json
+      description: Creates a new user with the provided email and returns the created
+        user's details.
+      operationId: create-user
+      parameters:
+      - description: User creation request
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Successfully created user
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.WebResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.UserResponse'
+              type: object
+        "400":
+          description: Invalid request payload or failed to create user
+          schema:
+            $ref: '#/definitions/dto.WebResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create a new user
+      tags:
+      - Users
+  /user/{userId}:
+    delete:
+      description: Deletes a user by their ID.
+      operationId: delete-user
+      parameters:
+      - description: User ID (UUID)
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully deleted user
+          schema:
+            $ref: '#/definitions/dto.WebResponse'
+        "400":
+          description: Invalid user ID or user not found
+          schema:
+            $ref: '#/definitions/dto.WebResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.WebResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete a user
+      tags:
+      - Users
+    get:
+      description: Retrieves a single user's details by their ID.
+      operationId: get-user-by-id
+      parameters:
+      - description: User ID (UUID)
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully retrieved user
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.WebResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.UserResponse'
+              type: object
+        "400":
+          description: Invalid user ID format or user not found
+          schema:
+            $ref: '#/definitions/dto.WebResponse'
+        "404":
+          description: User not found (due to invalid UUID format)
+          schema:
+            $ref: '#/definitions/dto.WebResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.WebResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get user by ID
+      tags:
+      - Users
+    put:
+      consumes:
+      - application/json
+      description: Updates an existing user's details by their ID.
+      operationId: update-user
+      parameters:
+      - description: User ID (UUID)
+        in: path
+        name: userId
+        required: true
+        type: string
+      - description: User update request
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully updated user
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.WebResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.UserResponse'
+              type: object
+        "400":
+          description: Invalid request payload, invalid user ID, or user not found
+          schema:
+            $ref: '#/definitions/dto.WebResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.WebResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update an existing user
+      tags:
+      - Users
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: X-API-KEY
+    type: apiKey
 swagger: "2.0"

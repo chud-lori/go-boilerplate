@@ -19,6 +19,18 @@ type UserController struct {
 	ports.UserService
 }
 
+// Create godoc
+// @Summary Create a new user
+// @Description Creates a new user with the provided email and returns the created user's details.
+// @ID create-user
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param user body dto.UserRequest true "User creation request"
+// @Success 201 {object} dto.WebResponse{data=dto.UserResponse} "Successfully created user"
+// @Failure 400 {object} dto.WebResponse "Invalid request payload or failed to create user"
+// @Router /user [post]
+// @Security ApiKeyAuth
 func (controller *UserController) Create(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	logger := ctx.Value(logger.LoggerContextKey).(*logrus.Entry)
@@ -64,6 +76,20 @@ func (controller *UserController) Create(w http.ResponseWriter, r *http.Request)
 	helper.WriteResponse(w, &response, http.StatusCreated)
 }
 
+// Update godoc
+// @Summary Update an existing user
+// @Description Updates an existing user's details by their ID.
+// @ID update-user
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param userId path string true "User ID (UUID)"
+// @Param user body dto.UserRequest true "User update request"
+// @Success 200 {object} dto.WebResponse{data=dto.UserResponse} "Successfully updated user"
+// @Failure 400 {object} dto.WebResponse "Invalid request payload, invalid user ID, or user not found"
+// @Failure 500 {object} dto.WebResponse "Internal server error"
+// @Router /user/{userId} [put]
+// @Security ApiKeyAuth
 func (controller *UserController) Update(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	logger := ctx.Value(logger.LoggerContextKey).(*logrus.Entry)
@@ -116,6 +142,18 @@ func (controller *UserController) Update(w http.ResponseWriter, r *http.Request)
 	helper.WriteResponse(w, &response, http.StatusOK)
 }
 
+// Delete godoc
+// @Summary Delete a user
+// @Description Deletes a user by their ID.
+// @ID delete-user
+// @Tags Users
+// @Produce json
+// @Param userId path string true "User ID (UUID)"
+// @Success 200 {object} dto.WebResponse "Successfully deleted user"
+// @Failure 400 {object} dto.WebResponse "Invalid user ID or user not found"
+// @Failure 500 {object} dto.WebResponse "Internal server error"
+// @Router /user/{userId} [delete]
+// @Security ApiKeyAuth
 func (controller *UserController) Delete(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	userId := r.PathValue("userId")
@@ -149,6 +187,19 @@ func (controller *UserController) Delete(w http.ResponseWriter, r *http.Request)
 	helper.WriteResponse(w, &response, http.StatusOK)
 }
 
+// FindById godoc
+// @Summary Get user by ID
+// @Description Retrieves a single user's details by their ID.
+// @ID get-user-by-id
+// @Tags Users
+// @Produce json
+// @Param userId path string true "User ID (UUID)"
+// @Success 200 {object} dto.WebResponse{data=dto.UserResponse} "Successfully retrieved user"
+// @Failure 400 {object} dto.WebResponse "Invalid user ID format or user not found"
+// @Failure 404 {object} dto.WebResponse "User not found (due to invalid UUID format)"
+// @Failure 500 {object} dto.WebResponse "Internal server error"
+// @Router /user/{userId} [get]
+// @Security ApiKeyAuth
 func (c *UserController) FindById(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	logger := ctx.Value(logger.LoggerContextKey).(*logrus.Entry)
@@ -192,6 +243,16 @@ func (c *UserController) FindById(w http.ResponseWriter, r *http.Request) {
 	helper.WriteResponse(w, &response, http.StatusOK)
 }
 
+// FindAll godoc
+// @Summary Get all users
+// @Description Retrieves a list of all users.
+// @ID get-all-users
+// @Tags Users
+// @Produce json
+// @Success 200 {object} dto.WebResponse{data=[]dto.UserResponse} "Successfully retrieved all users"
+// @Failure 500 {object} dto.WebResponse "Internal server error"
+// @Router /user [get]
+// @Security ApiKeyAuth
 func (controller *UserController) FindAll(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	logger, _ := ctx.Value(logger.LoggerContextKey).(*logrus.Entry)
