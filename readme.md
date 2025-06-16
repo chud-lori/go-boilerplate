@@ -26,17 +26,35 @@ A modern, production-ready Go boilerplate for building scalable web APIs and mic
 
 ```
 .
-├── adapters/           # Controllers, middleware, repositories, web routes & DTOs
-├── cmd/                # Entrypoint (main.go)
-├── config/             # Configuration files
-├── domain/             # Entities, ports (interfaces), and services
-├── grpc_service/       # gRPC client/server logic
-├── infrastructure/     # Database implementation
-├── internal/           # Internal utilities and test helpers
-├── mocks/              # Auto-generated and hand-written mocks for testing
-├── migrations/              # Migrations scheme
-├── pkg/                # Shared packages (auth, logger, errors)
-├── proto/              # Protobuf generated files
+├── adapters                  # Application layer interfaces to external world
+│   ├── controllers           # HTTP request handlers
+│   ├── middleware            # HTTP middleware (e.g., auth, logging)
+│   ├── repositories          # Database access interfaces
+│   └── web
+│       ├── dto               # Request/response data transfer objects
+│       └── helper            # Web helpers (e.g., response formatting)
+├── bin                       # Compiled binaries
+├── cmd
+│   └── api                   # Application entrypoint (main.go)
+├── config                    # Application configuration management
+├── docs                      # Generated documentation (Swagger, etc.)
+├── domain                    # Business logic layer
+│   ├── entities              # Core business entities
+│   ├── ports                 # Interfaces for input/output layers
+│   └── services              # Business use cases
+├── grpc_service              # gRPC server/client logic and implementation
+├── infrastructure
+│   └── datastore             # Concrete implementation of DB or other infrastructure
+├── internal
+│   ├── testutils             # Shared testing utilities
+│   └── utils                 # Internal helper functions
+├── migrations                # SQL migration files (used by golang-migrate)
+├── mocks                     # Auto-generated and custom mocks for testing
+├── pkg
+│   ├── auth                  # Authentication-related utilities
+│   ├── errors                # Custom error types and wrappers
+│   └── logger                # Logging setup and utilities
+├── proto                     # Protobuf definitions and generated files
 ├── .github/            # CI workflows
 ├── Dockerfile
 ├── docker-compose.yml
