@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 
 	"time"
@@ -18,6 +19,7 @@ import (
 type UserServiceImpl struct {
 	DB ports.Database
 	ports.UserRepository
+	ports.Cache
 	CtxTimeout time.Duration
 }
 
@@ -178,6 +180,13 @@ func (s *UserServiceImpl) FindAll(c context.Context) ([]*entities.User, error) {
 	ctx, cancel := context.WithTimeout(c, s.CtxTimeout)
 	defer cancel()
 
+	var users []*entities.User
+
+	usersCached, err := s.Cache.Get(c, "users")
+	if err = json.Unmarshal([]byte(usersCached), &users); err == nil {
+		return users, err
+	}
+
 	tx, err := s.DB.BeginTx(ctx)
 	if err != nil {
 		logger.WithError(err).Error("Failed to begin transaction")
@@ -192,22 +201,15 @@ func (s *UserServiceImpl) FindAll(c context.Context) ([]*entities.User, error) {
 		}
 	}()
 
-	result, err := s.UserRepository.FindAll(ctx, tx)
+	users, err = s.UserRepository.FindAll(ctx, tx)
 
 	if err != nil {
 		logger.WithError(err).Error("Failed to find all users")
 		return nil, err
 	}
 
-	users := make([]*entities.User, len(result))
-
-	for i, user := range result {
-		users[i] = &entities.User{
-			Id:         user.Id,
-			Email:      user.Email,
-			Created_at: user.Created_at,
-		}
-	}
+	usersString, _ := json.Marshal(&users)
+	s.Cache.Set(c, "users", usersString, 30*time.Second)
 
 	if err := tx.Commit(); err != nil {
 		logger.WithError(err).Error("Failed to commit transaction")
