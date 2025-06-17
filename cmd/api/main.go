@@ -89,10 +89,7 @@ func main() {
 
 	// Run server in a goroutine
 	go func() {
-		// TODO: add banner
-		// utils.Banner(cfg)
-		// TODO: remove
-		log.Printf("Server is running on port %d", cfg.ServerPort)
+		utils.Banner(cfg)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("HTTP server error: %v", err)
 		}
@@ -105,9 +102,9 @@ func main() {
 		"http-server": func(ctx context.Context) error {
 			return server.Shutdown(ctx)
 		},
-		// "redis-server": func(ctx context.Context) error {
-		// 	return cache.Close()
-		// },
+		"redis-server": func(ctx context.Context) error {
+			return cache.Close()
+		},
 	})
 
 	<-wait
