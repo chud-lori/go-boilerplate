@@ -94,7 +94,7 @@ A modern, production-ready Go boilerplate for building scalable web APIs and mic
    ```sh
    make swagger
    ```
-   Then access via `/swagger/index.html` (if enabled).
+   Then access via `/docs/index.html` (if enabled).
 
 6. **Run Migrations**
    Migrations are managed using `golang-migrate` via the Makefile:
