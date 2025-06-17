@@ -41,7 +41,7 @@ func TestUserRepository_Save(t *testing.T) {
 		require.NoError(t, err)
 		require.NotEmpty(t, savedUser.Id)
 		require.Equal(t, user.Email, savedUser.Email)
-		require.WithinDuration(t, time.Now(), savedUser.Created_at, time.Second)
+		require.WithinDuration(t, time.Now(), savedUser.CreatedAt, time.Second)
 	})
 }
 

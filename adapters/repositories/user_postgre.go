@@ -35,7 +35,7 @@ func (repository *UserRepositoryPostgre) Save(ctx context.Context, tx ports.Tran
 	}
 
 	user.Id = id
-	user.Created_at = createdAt
+	user.CreatedAt = createdAt
 
 	return user, nil
 }
@@ -83,7 +83,7 @@ func (repository *UserRepositoryPostgre) Delete(ctx context.Context, tx ports.Tr
 func (r *UserRepositoryPostgre) FindById(ctx context.Context, tx ports.Transaction, id string) (*entities.User, error) {
 	user := &entities.User{}
 	query := "SELECT id, email, created_at FROM users WHERE id = $1"
-	err := tx.QueryRowContext(ctx, query, id).Scan(&user.Id, &user.Email, &user.Created_at)
+	err := tx.QueryRowContext(ctx, query, id).Scan(&user.Id, &user.Email, &user.CreatedAt)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -106,7 +106,7 @@ func (repository *UserRepositoryPostgre) FindAll(ctx context.Context, tx ports.T
 	var users []*entities.User
 	for rows.Next() {
 		var user entities.User
-		err := rows.Scan(&user.Id, &user.Email, &user.Created_at)
+		err := rows.Scan(&user.Id, &user.Email, &user.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
