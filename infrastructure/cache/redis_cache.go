@@ -47,7 +47,7 @@ func (r *RedisCache) Get(ctx context.Context, key string) (string, error) {
 	if err == redis.Nil {
 		return "", nil
 	} else if err != nil {
-		logger.WithError(err).Warnf("failed to get key '%s' from Redis: %w", key, err)
+		logger.WithError(err).Warnf("failed to get key '%s' from Redis: %v", key, err)
 		return "", fmt.Errorf("failed to get key '%s' from Redis: %w", key, err)
 	}
 
@@ -59,7 +59,7 @@ func (r *RedisCache) Set(ctx context.Context, key string, value []byte, expirati
 
 	err := r.client.Set(ctx, key, value, expiration).Err()
 	if err != nil {
-		logger.WithError(err).Warnf("failed to set key '%s' in Redis: %w", key, err)
+		logger.WithError(err).Warnf("failed to set key '%s' in Redis: %v", key, err)
 		return fmt.Errorf("failed to set key '%s' in Redis: %w", key, err)
 	}
 	return nil
