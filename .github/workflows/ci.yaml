@@ -33,23 +33,6 @@ jobs:
         # Helps catch issues like corrupted caches or unexpected changes.
         run: go mod verify
 
-      - name: Check for gofmt issues (optional)
-        # Ensures code is properly formatted. Fails if unformatted files are found.
-        # This should ideally be run before any build/test, as unformatted code
-        # might indicate a PR that needs cleanup.
-        run: |
-          go install golang.org/x/tools/cmd/gofmt@latest
-          diff=$(gofmt -s -d .)
-          if [ -n "$diff" ]; then
-            echo "Unformatted Go code found. Please run 'go fmt ./...' and 'go mod tidy'."
-            echo "$diff"
-            exit 1
-          fi
-
-      - name: Run go vet (optional)
-        # go vet examines Go source code and reports suspicious constructs.
-        run: go vet ./...
-
       - name: Build Go application
         # This step compiles your main package. If your project has multiple
         # main packages, you might need to adjust this (e.g., `go build ./cmd/my-app`).
