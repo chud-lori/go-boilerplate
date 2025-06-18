@@ -13,8 +13,7 @@ func NewLogger(logLevel string) *logrus.Logger {
 	logger.SetOutput(os.Stdout)
 	logger.SetReportCaller(true)
 
-	logLevelStr := os.Getenv("LOG_LEVEL")
-	switch strings.ToLower(logLevelStr) {
+	switch strings.ToLower(logLevel) {
 	case "trace":
 		logger.SetLevel(logrus.TraceLevel)
 	case "debug":
