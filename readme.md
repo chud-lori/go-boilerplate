@@ -189,4 +189,4 @@ make test
 
 ## 🪪 License
 
-[Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0.html)
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
