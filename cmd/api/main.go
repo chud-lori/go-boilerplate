@@ -102,7 +102,7 @@ func main() {
 		"http-server": func(ctx context.Context) error {
 			return server.Shutdown(ctx)
 		},
-		"redis-server": func(ctx context.Context) error {
+		"cache": func(ctx context.Context) error {
 			return cache.Close()
 		},
 	})

@@ -70,7 +70,7 @@ func (controller *UserController) Create(w http.ResponseWriter, r *http.Request)
 		Data: dto.UserResponse{
 			Id:        result.Id,
 			Email:     result.Email,
-			CreatedAt: result.Created_at,
+			CreatedAt: result.CreatedAt,
 		},
 	}
 	helper.WriteResponse(w, &response, http.StatusCreated)
