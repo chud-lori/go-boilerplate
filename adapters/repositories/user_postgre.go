@@ -52,6 +52,10 @@ func (repository *UserRepositoryPostgre) Update(ctx context.Context, tx ports.Tr
 	}
 
 	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		logger.WithError(err).Error("Failed get row affected")
+		return nil, err
+	}
 
 	if rowsAffected == 0 {
 		logger.Error("User ID %s not found", user.Id)
@@ -62,6 +66,8 @@ func (repository *UserRepositoryPostgre) Update(ctx context.Context, tx ports.Tr
 }
 
 func (repository *UserRepositoryPostgre) Delete(ctx context.Context, tx ports.Transaction, id string) error {
+	logger, _ := ctx.Value(logger.LoggerContextKey).(logrus.FieldLogger)
+
 	query := "DELETE FROM users WHERE id = $1"
 	result, err := tx.ExecContext(ctx, query, id)
 	if err != nil {
@@ -70,7 +76,8 @@ func (repository *UserRepositoryPostgre) Delete(ctx context.Context, tx ports.Tr
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		return fmt.Errorf("failed to get rows affected: %v", err)
+		logger.WithError(err).Error("Failed get row affected")
+		return err
 	}
 
 	if rowsAffected == 0 {
