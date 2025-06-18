@@ -1,4 +1,4 @@
-name: Run Go Tests on Merge to Main
+name: Go Boilerplate CI/CD Workflow
 
 on:
   push:
@@ -10,7 +10,7 @@ on:
 
 jobs:
   test:
-    name: Run Go Tests
+    name: Build and Test Go Application
     runs-on: ubuntu-latest
 
     steps:
@@ -20,13 +20,45 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.23.0' # Change if you use a different Go version
+          go-version: '1.22.x' # Using 'x' for latest patch, or specify exact '1.22.5'
+          cache: true # Enable caching for Go modules and build cache
 
-      - name: Download dependencies
+      - name: Download Go modules
+        # This step will download all dependencies listed in go.mod and cache them.
+        # If the go.sum hasn't changed, this will be very fast due to setup-go's caching.
         run: go mod download
 
-      - name: Run tests
-        run: go test ./... -v -coverprofile=coverage.out
+      - name: Verify Go module integrity (optional but recommended)
+        # Ensures that go.sum matches the downloaded modules.
+        # Helps catch issues like corrupted caches or unexpected changes.
+        run: go mod verify
+
+      - name: Check for gofmt issues (optional)
+        # Ensures code is properly formatted. Fails if unformatted files are found.
+        # This should ideally be run before any build/test, as unformatted code
+        # might indicate a PR that needs cleanup.
+        run: |
+          go install golang.org/x/tools/cmd/gofmt@latest
+          diff=$(gofmt -s -d .)
+          if [ -n "$diff" ]; then
+            echo "Unformatted Go code found. Please run 'go fmt ./...' and 'go mod tidy'."
+            echo "$diff"
+            exit 1
+          fi
+
+      - name: Run go vet (optional)
+        # go vet examines Go source code and reports suspicious constructs.
+        run: go vet ./...
+
+      - name: Build Go application
+        # This step compiles your main package. If your project has multiple
+        # main packages, you might need to adjust this (e.g., `go build ./cmd/my-app`).
+        # This ensures the code compiles successfully before running tests.
+        run: go build -v ./...
+
+      - name: Run Go tests
+        # Runs all tests in the project. If `go build` passed, this focuses on test logic.
+        run: go test ./... -v -coverprofile=coverage.out -race # -race is highly recommended for concurrency issues
 
       - name: Upload test coverage report (optional)
         uses: actions/upload-artifact@v4
