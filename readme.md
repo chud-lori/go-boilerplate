@@ -3,7 +3,7 @@
 [![CI](https://github.com/chud-lori/go-boilerplate/actions/workflows/ci.yaml/badge.svg)](https://github.com/chud-lori/go-boilerplate/actions/workflows/ci.yaml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/chud-lori/go-boilerplate)](https://goreportcard.com/report/github.com/chud-lori/go-boilerplate)
 ![Go Version](https://img.shields.io/badge/go-1.23+-blue)
-<!-- ![License](https://img.shields.io/github/license/chud-lori/go-boilerplate) -->
+![License](https://img.shields.io/github/license/chud-lori/go-boilerplate)
 
 A modern, production-ready Go boilerplate for building scalable web APIs and microservices. This project follows Clean Architecture principles and includes best practices for modularity, testing, observability, and maintainability.
 
