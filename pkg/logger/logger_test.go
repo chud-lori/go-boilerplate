@@ -1,8 +1,6 @@
 package logger_test
 
 import (
-	"os"
-	"strings"
 	"testing"
 
 	"github.com/chud-lori/go-boilerplate/pkg/logger"
@@ -11,8 +9,7 @@ import (
 )
 
 func TestNewLogger_DefaultLevel(t *testing.T) {
-	os.Unsetenv("LOG_LEVEL")
-	log := logger.NewLogger()
+	log := logger.NewLogger("undefined")
 
 	assert.Equal(t, logrus.InfoLevel, log.GetLevel())
 	assert.IsType(t, &logrus.JSONFormatter{}, log.Formatter)
@@ -30,8 +27,7 @@ func TestNewLogger_VariousLevels(t *testing.T) {
 	}
 
 	for levelStr, expectedLevel := range levels {
-		os.Setenv("LOG_LEVEL", strings.ToUpper(levelStr))
-		log := logger.NewLogger()
+		log := logger.NewLogger(levelStr)
 		assert.Equal(t, expectedLevel, log.GetLevel())
 	}
 }

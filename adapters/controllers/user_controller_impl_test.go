@@ -331,9 +331,9 @@ func TestUserController_FindById_Success(t *testing.T) {
 	req = req.WithContext(ctx)
 
 	user := &entities.User{
-		Id:         userId,
-		Email:      "user@mail.com",
-		Created_at: time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC),
+		Id:        userId,
+		Email:     "user@mail.com",
+		CreatedAt: time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC),
 	}
 
 	mockService.On("FindById", mock.Anything, userId).Return(user, nil)
@@ -441,16 +441,16 @@ func TestUserController_FindAll_Success(t *testing.T) {
 
 	listUsers := []*entities.User{
 		{
-			Id:         "a234f98c-3239-4c34-8ad8-f63e41bb20c8", // Define userId directly here
-			Email:      "user1@mail.com",
-			Passcode:   "pass1",
-			Created_at: time.Date(2023, time.January, 15, 10, 0, 0, 0, time.UTC),
+			Id:        "a234f98c-3239-4c34-8ad8-f63e41bb20c8", // Define userId directly here
+			Email:     "user1@mail.com",
+			Passcode:  "pass1",
+			CreatedAt: time.Date(2023, time.January, 15, 10, 0, 0, 0, time.UTC),
 		},
 		{
-			Id:         "b567g89d-4321-5d67-9fg0-g76h54ij32k1",
-			Email:      "user2@mail.com",
-			Passcode:   "pass2",
-			Created_at: time.Date(2023, time.February, 20, 11, 30, 0, 0, time.UTC),
+			Id:        "b567g89d-4321-5d67-9fg0-g76h54ij32k1",
+			Email:     "user2@mail.com",
+			Passcode:  "pass2",
+			CreatedAt: time.Date(2023, time.February, 20, 11, 30, 0, 0, time.UTC),
 		},
 	}
 
@@ -494,7 +494,7 @@ func TestUserController_FindAll_Success(t *testing.T) {
 		actualCreatedAt, ok := firstUserMap["created_at"].(string)
 		assert.True(t, ok, "Expected 'created_at' field in first user data to be a string")
 		// You might need to parse it back to time.Time or compare string formats
-		expectedCreatedAtStr := listUsers[0].Created_at.Format(time.RFC3339Nano)
+		expectedCreatedAtStr := listUsers[0].CreatedAt.Format(time.RFC3339Nano)
 		assert.Equal(t, expectedCreatedAtStr, actualCreatedAt, "Expected first user created_at to match")
 	}
 

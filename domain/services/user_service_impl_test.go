@@ -2,6 +2,7 @@ package services_test
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"testing"
 	"time"
@@ -287,30 +288,34 @@ func TestUserService_FindAll_Success(t *testing.T) {
 	mockDB := new(mocks.MockDatabase)
 	mockRepo := new(mocks.MockUserRepository)
 	mockTx := new(mocks.MockTransaction)
+	mockCache := new(mocks.MockCache)
 
 	service := &services.UserServiceImpl{
 		DB:             mockDB,
 		UserRepository: mockRepo,
+		Cache:          mockCache,
 		CtxTimeout:     2 * time.Second,
 	}
 
 	listUsers := []*entities.User{
 		{
-			Id:         "a234f98c-3239-4c34-8ad8-f63e41bb20c8", // Define userId directly here
-			Email:      "user1@mail.com",
-			Passcode:   "pass1",
-			Created_at: time.Date(2023, time.January, 15, 10, 0, 0, 0, time.UTC),
+			Id:        "a234f98c-3239-4c34-8ad8-f63e41bb20c8", // Define userId directly here
+			Email:     "user1@mail.com",
+			Passcode:  "pass1",
+			CreatedAt: time.Date(2023, time.January, 15, 10, 0, 0, 0, time.UTC),
 		},
 		{
-			Id:         "b567g89d-4321-5d67-9fg0-g76h54ij32k1",
-			Email:      "user2@mail.com",
-			Passcode:   "pass2",
-			Created_at: time.Date(2023, time.February, 20, 11, 30, 0, 0, time.UTC),
+			Id:        "b567g89d-4321-5d67-9fg0-g76h54ij32k1",
+			Email:     "user2@mail.com",
+			Passcode:  "pass2",
+			CreatedAt: time.Date(2023, time.February, 20, 11, 30, 0, 0, time.UTC),
 		},
 	}
 
+	mockCache.On("Get", mock.Anything, "users").Return("", nil).Once()
 	mockDB.On("BeginTx", mock.Anything).Return(mockTx, nil)
 	mockRepo.On("FindAll", mock.Anything, mockTx).Return(listUsers, nil)
+	mockCache.On("Set", mock.Anything, "users", mock.AnythingOfType("[]uint8"), mock.AnythingOfType("time.Duration")).Return(nil).Once()
 	mockTx.On("Commit").Return(nil)
 
 	result, err := service.FindAll(ctx)
@@ -318,7 +323,55 @@ func TestUserService_FindAll_Success(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 
+	mockCache.AssertExpectations(t)
 	mockDB.AssertExpectations(t)
 	mockRepo.AssertExpectations(t)
 	mockTx.AssertExpectations(t)
+}
+
+func TestUserService_FindAll_SuccessCache(t *testing.T) {
+	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
+	mockDB := new(mocks.MockDatabase)
+	mockRepo := new(mocks.MockUserRepository)
+	mockTx := new(mocks.MockTransaction)
+	mockCache := new(mocks.MockCache)
+
+	service := &services.UserServiceImpl{
+		DB:             mockDB,
+		UserRepository: mockRepo,
+		Cache:          mockCache,
+		CtxTimeout:     2 * time.Second,
+	}
+
+	listUsers := []*entities.User{
+		{
+			Id:        "a234f98c-3239-4c34-8ad8-f63e41bb20c8", // Define userId directly here
+			Email:     "user1@mail.com",
+			Passcode:  "pass1",
+			CreatedAt: time.Date(2023, time.January, 15, 10, 0, 0, 0, time.UTC),
+		},
+		{
+			Id:        "b567g89d-4321-5d67-9fg0-g76h54ij32k1",
+			Email:     "user2@mail.com",
+			Passcode:  "pass2",
+			CreatedAt: time.Date(2023, time.February, 20, 11, 30, 0, 0, time.UTC),
+		},
+	}
+
+	listUsersJson, err := json.Marshal(listUsers)
+	assert.NoError(t, err, "Failed to marshal listUsers for test setup")
+
+	mockCache.On("Get", mock.Anything, "users").Return(string(listUsersJson), nil).Once()
+
+	result, err := service.FindAll(ctx)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+
+	mockCache.AssertExpectations(t)
+
+	mockDB.AssertNotCalled(t, "BeginTx", mock.Anything, mock.Anything)   // Assuming BeginTx is the only DB method
+	mockRepo.AssertNotCalled(t, "FindAll", mock.Anything, mock.Anything) // Assuming FindAll is the only Repo method
+	mockCache.AssertNotCalled(t, "Set")
+	mockTx.AssertNotCalled(t, "Commit") // Assuming Commit is the only Tx method
 }

@@ -5,21 +5,21 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/chud-lori/go-boilerplate/adapters/controllers"
 	"github.com/chud-lori/go-boilerplate/adapters/middleware"
 	"github.com/chud-lori/go-boilerplate/adapters/repositories"
 	"github.com/chud-lori/go-boilerplate/adapters/web"
+	"github.com/chud-lori/go-boilerplate/config"
 	_ "github.com/chud-lori/go-boilerplate/docs"
 	"github.com/chud-lori/go-boilerplate/domain/services"
+	"github.com/chud-lori/go-boilerplate/infrastructure/cache"
 	"github.com/chud-lori/go-boilerplate/infrastructure/datastore"
 	"github.com/chud-lori/go-boilerplate/internal/utils"
 	"github.com/chud-lori/go-boilerplate/pkg/logger"
-	httpSwagger "github.com/swaggo/http-swagger"
-
 	"github.com/joho/godotenv"
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 // @title Go Boilerplate API
@@ -39,13 +39,24 @@ func main() {
 		log.Fatal("Failed load keys")
 	}
 
-	baseLogger := logger.NewLogger()
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		log.Fatalf("Failed to load configuration: %v", err)
+	}
 
-	db, err := datastore.NewDatabase(os.Getenv("DB_URL"), baseLogger)
+	baseLogger := logger.NewLogger(cfg.LogLevel)
+
+	db, err := datastore.NewDatabase(cfg.DatabaseURL, baseLogger)
 	if err != nil {
 		baseLogger.Fatal("Failed to connect to database: ", err)
 	}
 	defer db.Close()
+
+	cache, err := cache.NewRedisCache(cfg.RedisAddr, cfg.RedisPassword, cfg.RedisDB, baseLogger)
+	if err != nil {
+		baseLogger.Fatal("Failed to connect to cache server: ", err)
+	}
+	defer cache.Close()
 
 	ctxTimeout := time.Duration(60) * time.Second
 
@@ -53,6 +64,7 @@ func main() {
 	userService := &services.UserServiceImpl{
 		DB:             db,
 		UserRepository: userRepository,
+		Cache:          cache,
 		CtxTimeout:     ctxTimeout,
 	}
 	userController := &controllers.UserController{
@@ -60,7 +72,7 @@ func main() {
 	}
 
 	router := http.NewServeMux()
-	if os.Getenv("APP_ENV") != "production" {
+	if cfg.AppEnv != "production" {
 		router.Handle("/docs/", httpSwagger.WrapHandler)
 	}
 
@@ -68,16 +80,16 @@ func main() {
 
 	var handler http.Handler = router
 	handler = middleware.LogTrafficMiddleware(handler, baseLogger)
-	handler = middleware.APIKeyMiddleware(handler, baseLogger)
+	handler = middleware.APIKeyMiddleware(handler, cfg.APIKey, baseLogger)
 
 	server := http.Server{
-		Addr:    fmt.Sprintf(":%s", os.Getenv("APP_PORT")),
+		Addr:    fmt.Sprintf(":%d", cfg.ServerPort),
 		Handler: handler,
 	}
 
 	// Run server in a goroutine
 	go func() {
-		log.Printf("Server is running on port %s", os.Getenv("APP_PORT"))
+		utils.Banner(cfg)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("HTTP server error: %v", err)
 		}
@@ -89,6 +101,9 @@ func main() {
 		},
 		"http-server": func(ctx context.Context) error {
 			return server.Shutdown(ctx)
+		},
+		"cache": func(ctx context.Context) error {
+			return cache.Close()
 		},
 	})
 
