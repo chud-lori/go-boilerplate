@@ -8,16 +8,20 @@ BUILD_DIR := bin
 DOCKER_IMAGE := service-app
 DOCKER_COMPOSE := docker-compose.yaml
 
-all: test build run
+all: migration-reset migration-up test build run
 
 migration-create:
 	migrate create -ext sql -dir migrations -seq $(name)
 
 migration-up:
-	migrate -path migrations -database "${DB_URL}" up
+	migrate -path migrations -database "${DATABASE_URL}" up
 
 migration-down:
-	migrate -path migrations -database "${DB_URL}" down
+	migrate -path migrations -database "${DATABASE_URL}" down 1
+
+# Rollback all migrations without prompt (for local reset only!)
+migration-reset:
+	yes | migrate -path migrations -database "${DATABASE_URL}" down
 
 test:
 	@echo "Running tests..."
@@ -65,7 +69,7 @@ up:
 
 down:
 	@echo "Stopping Docker Compose stack..."
-	@docker compose -f $(DOCKER_COMPOSE) down
+	@docker compose -f $(DOCKER_COMPOSE) down -v
 
 rebuild:
 	@echo "Rebuilding Docker stack..."
