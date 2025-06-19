@@ -6,8 +6,11 @@ import (
 
 	appErrors "github.com/chud-lori/go-boilerplate/pkg/errors"
 	"github.com/chud-lori/go-boilerplate/pkg/logger"
+	"github.com/go-playground/validator/v10"
 	"github.com/sirupsen/logrus"
 )
+
+var validate = validator.New()
 
 func GetPayload(request *http.Request, result interface{}) error {
 	logger, ok := request.Context().Value(logger.LoggerContextKey).(*logrus.Entry)
@@ -29,6 +32,13 @@ func GetPayload(request *http.Request, result interface{}) error {
 		logger.WithError(err).Error("Failed to decode request payload")
 		return appErrors.NewBadRequestError("User not found", err)
 	}
+
+	// Validator
+	if err := validate.Struct(result); err != nil {
+		logger.WithError(err).Warn("Validation failed")
+		return appErrors.NewBadRequestError("Validation error", err)
+	}
+
 	return nil
 }
 
