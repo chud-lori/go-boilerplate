@@ -31,6 +31,7 @@ type UserController struct {
 // @Failure 400 {object} dto.WebResponse "Invalid request payload or failed to create user"
 // @Router /user [post]
 // @Security ApiKeyAuth
+// @Security BearerAuth
 func (controller *UserController) Create(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	logger := ctx.Value(logger.LoggerContextKey).(*logrus.Entry)
@@ -90,6 +91,7 @@ func (controller *UserController) Create(w http.ResponseWriter, r *http.Request)
 // @Failure 500 {object} dto.WebResponse "Internal server error"
 // @Router /user/{userId} [put]
 // @Security ApiKeyAuth
+// @Security BearerAuth
 func (controller *UserController) Update(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	logger := ctx.Value(logger.LoggerContextKey).(*logrus.Entry)
@@ -109,7 +111,7 @@ func (controller *UserController) Update(w http.ResponseWriter, r *http.Request)
 	userPayload := &entities.User{
 		Id:       userId,
 		Email:    userRequest.Email,
-		Passcode: userRequest.Passcode,
+		Password: userRequest.Password,
 	}
 
 	userResponse, err := controller.UserService.Update(ctx, userPayload)
@@ -154,6 +156,7 @@ func (controller *UserController) Update(w http.ResponseWriter, r *http.Request)
 // @Failure 500 {object} dto.WebResponse "Internal server error"
 // @Router /user/{userId} [delete]
 // @Security ApiKeyAuth
+// @Security BearerAuth
 func (controller *UserController) Delete(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	userId := r.PathValue("userId")
@@ -200,6 +203,7 @@ func (controller *UserController) Delete(w http.ResponseWriter, r *http.Request)
 // @Failure 500 {object} dto.WebResponse "Internal server error"
 // @Router /user/{userId} [get]
 // @Security ApiKeyAuth
+// @Security BearerAuth
 func (c *UserController) FindById(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	logger := ctx.Value(logger.LoggerContextKey).(*logrus.Entry)
@@ -253,6 +257,7 @@ func (c *UserController) FindById(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {object} dto.WebResponse "Internal server error"
 // @Router /user [get]
 // @Security ApiKeyAuth
+// @Security BearerAuth
 func (controller *UserController) FindAll(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	logger, _ := ctx.Value(logger.LoggerContextKey).(*logrus.Entry)
