@@ -17,6 +17,7 @@ type AppConfig struct {
 	RedisPassword string // New: Redis password (can be empty)
 	RedisDB       int    // New: Redis DB number
 	Version       string
+	JwtSecret     string
 }
 
 func LoadConfig() (*AppConfig, error) {
@@ -73,6 +74,7 @@ func LoadConfig() (*AppConfig, error) {
 
 	// Version
 	cfg.Version = "0.2.0"
+	cfg.JwtSecret = os.Getenv("JWT_SECRET")
 
 	return cfg, nil
 }
