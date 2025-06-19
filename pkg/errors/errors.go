@@ -40,3 +40,11 @@ func NewNotFoundError(message string, err error) *AppError {
 		Err:        err,
 	}
 }
+
+func NewUnauthorizedError(message string, err error) *AppError {
+	return &AppError{
+		Message:    message,
+		StatusCode: http.StatusUnauthorized,
+		Err:        err,
+	}
+}
