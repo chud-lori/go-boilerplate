@@ -25,10 +25,10 @@ func (repository *UserRepositoryPostgre) Save(ctx context.Context, tx ports.Tran
 	var id string
 	var createdAt time.Time
 	query := `
-            INSERT INTO users (email, passcode)
+            INSERT INTO users (email, password)
             VALUES ($1, $2)
             RETURNING id, created_at`
-	err := tx.QueryRowContext(ctx, query, user.Email, user.Passcode).Scan(&id, &createdAt)
+	err := tx.QueryRowContext(ctx, query, user.Email, user.Password).Scan(&id, &createdAt)
 	if err != nil {
 		logger.Error("Failed to insert user: ", err)
 		return nil, err
@@ -43,8 +43,8 @@ func (repository *UserRepositoryPostgre) Save(ctx context.Context, tx ports.Tran
 func (repository *UserRepositoryPostgre) Update(ctx context.Context, tx ports.Transaction, user *entities.User) (*entities.User, error) {
 	logger, _ := ctx.Value(logger.LoggerContextKey).(logrus.FieldLogger)
 
-	query := "UPDATE users SET email = $1, passcode = $2 WHERE id = $3"
-	result, err := tx.ExecContext(ctx, query, user.Email, user.Passcode, user.Id)
+	query := "UPDATE users SET email = $1, password = $2 WHERE id = $3"
+	result, err := tx.ExecContext(ctx, query, user.Email, user.Password, user.Id)
 
 	if err != nil {
 		logger.WithError(err).Error("Error Update")
@@ -91,6 +91,21 @@ func (r *UserRepositoryPostgre) FindById(ctx context.Context, tx ports.Transacti
 	user := &entities.User{}
 	query := "SELECT id, email, created_at FROM users WHERE id = $1"
 	err := tx.QueryRowContext(ctx, query, id).Scan(&user.Id, &user.Email, &user.CreatedAt)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, appErrors.ErrUserNotFound
+		}
+		return nil, err
+	}
+
+	return user, nil
+}
+
+func (r *UserRepositoryPostgre) FindByEmail(ctx context.Context, tx ports.Transaction, email string) (*entities.User, error) {
+	user := &entities.User{}
+	query := "SELECT id, email, created_at FROM users WHERE email = $1"
+	err := tx.QueryRowContext(ctx, query, email).Scan(&user.Id, &user.Email, &user.CreatedAt)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
