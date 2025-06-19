@@ -7,7 +7,6 @@ import (
 
 	"time"
 
-	"github.com/chud-lori/go-boilerplate/pkg/auth"
 	appErrors "github.com/chud-lori/go-boilerplate/pkg/errors"
 
 	"github.com/chud-lori/go-boilerplate/domain/entities"
@@ -19,6 +18,7 @@ import (
 type UserServiceImpl struct {
 	DB ports.Database
 	ports.UserRepository
+	ports.Encryptor
 	ports.Cache
 	CtxTimeout time.Duration
 }
@@ -41,7 +41,12 @@ func (s *UserServiceImpl) Save(c context.Context, user *entities.User) (*entitie
 		}
 	}()
 
-	user.Passcode = auth.GeneratePasscode()
+	password, err := s.Encryptor.HashPassword(user.Password)
+	if err != nil {
+		return nil, err
+	}
+
+	user.Password = password
 	result, err := s.UserRepository.Save(ctx, tx, user)
 
 	if err != nil {
