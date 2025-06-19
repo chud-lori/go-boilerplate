@@ -104,8 +104,8 @@ func (r *UserRepositoryPostgre) FindById(ctx context.Context, tx ports.Transacti
 
 func (r *UserRepositoryPostgre) FindByEmail(ctx context.Context, tx ports.Transaction, email string) (*entities.User, error) {
 	user := &entities.User{}
-	query := "SELECT id, email, created_at FROM users WHERE email = $1"
-	err := tx.QueryRowContext(ctx, query, email).Scan(&user.Id, &user.Email, &user.CreatedAt)
+	query := "SELECT id, password, email, created_at FROM users WHERE email = $1"
+	err := tx.QueryRowContext(ctx, query, email).Scan(&user.Id, &user.Password, &user.Email, &user.CreatedAt)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
