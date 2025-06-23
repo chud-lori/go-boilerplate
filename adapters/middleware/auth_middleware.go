@@ -20,13 +20,6 @@ func JWTMiddleware(next http.Handler, tokenManager ports.TokenManager, logger *l
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		// only /api/user since middleware not works
-		// TODO: find a way to grouped middleware routing
-		if !strings.HasPrefix(r.URL.Path, "/api/user") {
-			next.ServeHTTP(w, r)
-			return
-		}
-
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
 			http.Error(w, "Unauthorized: missing token", http.StatusUnauthorized)

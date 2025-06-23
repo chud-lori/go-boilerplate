@@ -108,24 +108,72 @@ func main() {
 	}
 
 	// ========== Routers ==========
+	// router := http.NewServeMux()
 
+	// // Public routes (no JWT middleware)
+	// if cfg.AppEnv != "production" {
+	// 	router.Handle("/docs/", httpSwagger.WrapHandler)
+	// }
+	// web.AuthRouter(authController, router)
+
+	// // Protected routes (with JWT middleware)
+	// protectedRouter := http.NewServeMux()
+	// web.UserRouter(userController, protectedRouter)
+
+	// // Apply JWT middleware only to protected routes
+	// var protectedHandler http.Handler = protectedRouter
+	// protectedHandler = middleware.JWTMiddleware(protectedHandler, tokenManager, baseLogger)
+
+	// // Mount the protected handler to the main router
+	// router.Handle("/api/user/", http.StripPrefix("/api/user", protectedHandler))
+	// router.Handle("/api/user", protectedHandler)
+
+	// ========== Routers ==========
 	router := http.NewServeMux()
 
-	// Public routes
+	// Documentation (no /api prefix)
 	if cfg.AppEnv != "production" {
 		router.Handle("/docs/", httpSwagger.WrapHandler)
 	}
 
-	web.AuthRouter(authController, router)
-	// TODO: Add jwt middleware
-	web.UserRouter(userController, router)
+	// Create a single API router that will contain all API routes
+	apiRouter := http.NewServeMux()
+
+	// Auth routes (public)
+	web.AuthRouter(authController, apiRouter)
+
+	// User routes (protected)
+	userRouter := http.NewServeMux()
+	web.UserRouter(userController, userRouter)
+	var protectedUserHandler http.Handler = userRouter
+	protectedUserHandler = middleware.JWTMiddleware(protectedUserHandler, tokenManager, baseLogger)
+
+	// Mount user routes to API router
+	apiRouter.Handle("/user", protectedUserHandler)
+	apiRouter.Handle("/user/", protectedUserHandler)
+
+	// When you add more domains, just add them to apiRouter:
+	// productRouter := http.NewServeMux()
+	// web.ProductRouter(productController, productRouter)
+	// apiRouter.Handle("/product", productRouter)
+	// apiRouter.Handle("/product/", productRouter)
+
+	// orderRouter := http.NewServeMux()
+	// web.OrderRouter(orderController, orderRouter)
+	// var protectedOrderHandler http.Handler = orderRouter
+	// protectedOrderHandler = middleware.JWTMiddleware(protectedOrderHandler, tokenManager, baseLogger)
+	// apiRouter.Handle("/order", protectedOrderHandler)
+	// apiRouter.Handle("/order/", protectedOrderHandler)
+
+	// Single mount point for all API routes
+	router.Handle("/api/", http.StripPrefix("/api", apiRouter))
 
 	// ========== Global Middleware Chain ==========
 
 	var handler http.Handler = router
 	handler = middleware.LogTrafficMiddleware(handler, baseLogger)
 	handler = middleware.APIKeyMiddleware(handler, cfg.APIKey, baseLogger)
-	handler = middleware.JWTMiddleware(handler, tokenManager, baseLogger)
+	// handler = middleware.JWTMiddleware(handler, tokenManager, baseLogger)
 
 	// ========== HTTP Server Setup ==========
 

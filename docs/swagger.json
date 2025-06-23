@@ -458,7 +458,6 @@
             "required": [
                 "confirm_password",
                 "email",
-                "name",
                 "password"
             ],
             "properties": {
@@ -468,11 +467,6 @@
                 "email": {
                     "type": "string",
                     "maxLength": 200,
-                    "minLength": 1
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 8,
                     "minLength": 1
                 },
                 "password": {
