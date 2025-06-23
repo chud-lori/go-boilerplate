@@ -40,12 +40,12 @@ func (s *AuthServiceImpl) SignIn(c context.Context, user *entities.User) (*entit
 	foundUser, err := s.UserRepository.FindByEmail(ctx, tx, user.Email)
 	if err != nil {
 		logger.WithError(err).Warn("User not found by email")
-		return nil, "", appErrors.NewNotFoundError("Unauthorized", err)
+		return nil, "", appErrors.NewUnauthorizedError("Unauthorized", err)
 	}
 
 	if err := s.Encryptor.CompareHash(foundUser.Password, user.Password); err != nil {
 		logger.WithError(err).Warn("Invalid password")
-		return nil, "", appErrors.NewNotFoundError("Unauthorized", err)
+		return nil, "", appErrors.NewUnauthorizedError("Unauthorized", err)
 	}
 
 	token, err := s.TokenManager.GenerateToken(foundUser.Id)
@@ -82,7 +82,8 @@ func (s *AuthServiceImpl) SignUp(c context.Context, user *entities.User) (*entit
 	existing, _ := s.UserRepository.FindByEmail(ctx, tx, user.Email)
 	if existing != nil {
 		logger.Warn("Email already in use")
-		return nil, "", appErrors.NewBadRequestError("Email already exist", err)
+		err = appErrors.NewBadRequestError("Email already exist", nil)
+		return nil, "", err
 	}
 
 	hashedPassword, err := s.Encryptor.HashPassword(user.Password)

@@ -43,6 +43,7 @@ func (s *UserServiceImpl) Save(c context.Context, user *entities.User) (*entitie
 
 	password, err := s.Encryptor.HashPassword(user.Password)
 	if err != nil {
+		logger.WithError(err).Error("Failed hash password")
 		return nil, err
 	}
 
@@ -81,6 +82,13 @@ func (s *UserServiceImpl) Update(c context.Context, user *entities.User) (*entit
 			tx.Rollback()
 		}
 	}()
+
+	password, err := s.Encryptor.HashPassword(user.Password)
+	if err != nil {
+		return nil, err
+	}
+
+	user.Password = password
 
 	result, err := s.UserRepository.Update(ctx, tx, user)
 
