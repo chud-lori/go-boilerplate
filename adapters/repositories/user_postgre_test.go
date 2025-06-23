@@ -82,7 +82,7 @@ func TestUserRepository_FindByEmail(t *testing.T) {
 
 func TestUserRepository_FindByEmail_NotFound(t *testing.T) {
 	withTestTransaction(t, func(ctx context.Context, repo *repositories.UserRepositoryPostgre, tx ports.Transaction) {
-		_, err := repo.FindById(ctx, tx, "find@example.com")
+		_, err := repo.FindByEmail(ctx, tx, "find@example.com")
 		require.ErrorIs(t, err, appErrors.ErrUserNotFound)
 	})
 }
