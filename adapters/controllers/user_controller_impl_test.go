@@ -107,7 +107,7 @@ func TestUserController_Update_Success(t *testing.T) {
 
 	reqBody := &dto.UserRequest{
 		Email:    "user@mail.com",
-		Passcode: "IJHD9782",
+		Password: "IJHD9782",
 	}
 	userId := "a234f98c-3239-4c34-8ad8-f63e41bb20c8"
 
@@ -121,7 +121,7 @@ func TestUserController_Update_Success(t *testing.T) {
 	user := &entities.User{
 		Id:       userId,
 		Email:    "user@mail.com",
-		Passcode: "IJHD9782",
+		Password: "IJHD9782",
 	}
 
 	mockService.On("Update", mock.Anything, user).Return(user, nil)
@@ -147,7 +147,7 @@ func TestUserController_Update_UserNotFound(t *testing.T) {
 
 	reqBody := &dto.UserRequest{
 		Email:    "user@mail.com",
-		Passcode: "IJHD9782",
+		Password: "IJHD9782",
 	}
 	userId := "a234f98c-3239-4c34-8ad8-f63e41bb20c8"
 
@@ -161,7 +161,7 @@ func TestUserController_Update_UserNotFound(t *testing.T) {
 	user := &entities.User{
 		Id:       userId,
 		Email:    "user@mail.com",
-		Passcode: "IJHD9782",
+		Password: "IJHD9782",
 	}
 
 	mockError := appErrors.NewNotFoundError("User not found", nil)
@@ -190,7 +190,7 @@ func TestUserController_Update_Failed(t *testing.T) {
 
 	reqBody := &dto.UserRequest{
 		Email:    "user@mail.com",
-		Passcode: "IJHD9782",
+		Password: "IJHD9782",
 	}
 	userId := "a234f98c-3239-4c34-8ad8-f63e41bb20c8"
 
@@ -204,7 +204,7 @@ func TestUserController_Update_Failed(t *testing.T) {
 	user := &entities.User{
 		Id:       userId,
 		Email:    "user@mail.com",
-		Passcode: "IJHD9782",
+		Password: "IJHD9782",
 	}
 
 	mockService.On("Update", mock.Anything, user).Return(nil, errors.New("Errors"))
@@ -443,13 +443,13 @@ func TestUserController_FindAll_Success(t *testing.T) {
 		{
 			Id:        "a234f98c-3239-4c34-8ad8-f63e41bb20c8", // Define userId directly here
 			Email:     "user1@mail.com",
-			Passcode:  "pass1",
+			Password:  "pass1",
 			CreatedAt: time.Date(2023, time.January, 15, 10, 0, 0, 0, time.UTC),
 		},
 		{
 			Id:        "b567g89d-4321-5d67-9fg0-g76h54ij32k1",
 			Email:     "user2@mail.com",
-			Passcode:  "pass2",
+			Password:  "pass2",
 			CreatedAt: time.Date(2023, time.February, 20, 11, 30, 0, 0, time.UTC),
 		},
 	}
