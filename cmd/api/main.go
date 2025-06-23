@@ -92,6 +92,7 @@ func main() {
 	userService := &services.UserServiceImpl{
 		DB:             db,
 		UserRepository: userRepo,
+		Encryptor:      encryptor,
 		Cache:          cache,
 		CtxTimeout:     ctxTimeout,
 	}

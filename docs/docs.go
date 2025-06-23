@@ -433,7 +433,7 @@ const docTemplate = `{
         "dto.AuthResponse": {
             "type": "object",
             "properties": {
-                "id": {
+                "token": {
                     "type": "string"
                 },
                 "user": {

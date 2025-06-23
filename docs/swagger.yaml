@@ -2,7 +2,7 @@ basePath: /api
 definitions:
   dto.AuthResponse:
     properties:
-      id:
+      token:
         type: string
       user:
         $ref: '#/definitions/dto.UserResponse'
