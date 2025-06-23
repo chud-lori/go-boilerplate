@@ -36,7 +36,12 @@ func GetPayload(request *http.Request, result interface{}) error {
 	// Validator
 	if err := validate.Struct(result); err != nil {
 		logger.WithError(err).Warn("Validation failed")
-		return appErrors.NewBadRequestError("Validation error", err)
+		if validationErrors, ok := err.(validator.ValidationErrors); ok {
+			// Convert validator.ValidationErrors to our custom ValidationErrors
+			return appErrors.NewValidationErrors(validationErrors)
+		}
+		// If it's not a validator.ValidationErrors, something else went wrong
+		return appErrors.NewBadRequestError("Validation failed due to unexpected error", err)
 	}
 
 	return nil
