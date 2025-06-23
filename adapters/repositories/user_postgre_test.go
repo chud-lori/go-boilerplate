@@ -35,7 +35,7 @@ func TestUserRepository_Save(t *testing.T) {
 		t.Logf("tx type: %T", tx)
 		user := &entities.User{
 			Email:    "save@example.com",
-			Passcode: "pass123",
+			Password: "pass123",
 		}
 		savedUser, err := repo.Save(ctx, tx, user)
 		require.NoError(t, err)
@@ -49,7 +49,7 @@ func TestUserRepository_FindById(t *testing.T) {
 	withTestTransaction(t, func(ctx context.Context, repo *repositories.UserRepositoryPostgre, tx ports.Transaction) {
 		user := &entities.User{
 			Email:    "find@example.com",
-			Passcode: "pass123",
+			Password: "pass123",
 		}
 		savedUser, _ := repo.Save(ctx, tx, user)
 		found, err := repo.FindById(ctx, tx, savedUser.Id)
@@ -66,11 +66,32 @@ func TestUserRepository_FindById_NotFound(t *testing.T) {
 	})
 }
 
+func TestUserRepository_FindByEmail(t *testing.T) {
+	withTestTransaction(t, func(ctx context.Context, repo *repositories.UserRepositoryPostgre, tx ports.Transaction) {
+		user := &entities.User{
+			Email:    "find@example.com",
+			Password: "pass123",
+		}
+		savedUser, _ := repo.Save(ctx, tx, user)
+		found, err := repo.FindByEmail(ctx, tx, savedUser.Email)
+		require.NoError(t, err)
+		require.Equal(t, savedUser.Id, found.Id)
+		require.Equal(t, savedUser.Email, found.Email)
+	})
+}
+
+func TestUserRepository_FindByEmail_NotFound(t *testing.T) {
+	withTestTransaction(t, func(ctx context.Context, repo *repositories.UserRepositoryPostgre, tx ports.Transaction) {
+		_, err := repo.FindByEmail(ctx, tx, "find@example.com")
+		require.ErrorIs(t, err, appErrors.ErrUserNotFound)
+	})
+}
+
 func TestUserRepository_Update(t *testing.T) {
 	withTestTransaction(t, func(ctx context.Context, repo *repositories.UserRepositoryPostgre, tx ports.Transaction) {
 		user := &entities.User{
 			Email:    "update@example.com",
-			Passcode: "pass123",
+			Password: "pass123",
 		}
 		saved, _ := repo.Save(ctx, tx, user)
 		saved.Email = "updated@example.com"
@@ -83,7 +104,7 @@ func TestUserRepository_Update(t *testing.T) {
 // // ERROR HERE
 func TestUserRepository_Update_NotFound(t *testing.T) {
 	withTestTransaction(t, func(ctx context.Context, repo *repositories.UserRepositoryPostgre, tx ports.Transaction) {
-		nonExistent := &entities.User{Id: "ad24a17d-2925-4aa8-b077-d358a0788df7", Email: "none@example.com", Passcode: "123"}
+		nonExistent := &entities.User{Id: "ad24a17d-2925-4aa8-b077-d358a0788df7", Email: "none@example.com", Password: "123"}
 		_, err := repo.Update(ctx, tx, nonExistent)
 		require.ErrorIs(t, err, appErrors.ErrUserNotFound)
 	})
@@ -93,7 +114,7 @@ func TestUserRepository_Delete(t *testing.T) {
 	withTestTransaction(t, func(ctx context.Context, repo *repositories.UserRepositoryPostgre, tx ports.Transaction) {
 		user := &entities.User{
 			Email:    "delete@example.com",
-			Passcode: "pass123",
+			Password: "pass123",
 		}
 		saved, _ := repo.Save(ctx, tx, user)
 		err := repo.Delete(ctx, tx, saved.Id)
@@ -110,8 +131,8 @@ func TestUserRepository_Delete_NotFound(t *testing.T) {
 
 func TestUserRepository_FindAll(t *testing.T) {
 	withTestTransaction(t, func(ctx context.Context, repo *repositories.UserRepositoryPostgre, tx ports.Transaction) {
-		repo.Save(ctx, tx, &entities.User{Email: "all1@example.com", Passcode: "123"})
-		repo.Save(ctx, tx, &entities.User{Email: "all2@example.com", Passcode: "123"})
+		repo.Save(ctx, tx, &entities.User{Email: "all1@example.com", Password: "123"})
+		repo.Save(ctx, tx, &entities.User{Email: "all2@example.com", Password: "123"})
 		users, err := repo.FindAll(ctx, tx)
 		require.NoError(t, err)
 		require.GreaterOrEqual(t, len(users), 2)

@@ -36,8 +36,8 @@ FROM alpine:latest
 WORKDIR /app
 
 # Just copy the built binary and env file
-ARG APP_NAME=bin/service-app
-COPY --from=builder /app/${APP_NAME} ./main
+ARG BIN_LOC=bin/service-app
+COPY --from=builder /app/${BIN_LOC} ./main
 COPY --from=builder /app/.env .
 
 # Run the app directly

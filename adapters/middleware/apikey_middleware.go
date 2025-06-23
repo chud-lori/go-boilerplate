@@ -11,8 +11,9 @@ func APIKeyMiddleware(next http.Handler, apiKey string, logger *logrus.Logger) h
 	mwLogger := logger.WithFields(logrus.Fields{
 		"layer": "middleware",
 	})
-	// Skip API key check for Swagger docs
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Skip API key check for Swagger docs
 		if strings.HasPrefix(r.URL.Path, "/docs/") {
 			next.ServeHTTP(w, r)
 			return

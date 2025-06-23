@@ -22,17 +22,22 @@ func TestUserService_Save_Success(t *testing.T) {
 	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
 	mockDB := new(mocks.MockDatabase)
 	mockRepo := new(mocks.MockUserRepository)
+	mockEnc := new(mocks.MockEncryptor)
+	mockCache := new(mocks.MockCache)
 	mockTx := new(mocks.MockTransaction)
 
 	service := &services.UserServiceImpl{
 		DB:             mockDB,
 		UserRepository: mockRepo,
+		Encryptor:      mockEnc,
+		Cache:          mockCache,
 		CtxTimeout:     2 * time.Second,
 	}
 
-	user := &entities.User{Id: "", Email: "user@mail.com", Passcode: ""}
+	user := &entities.User{Id: "", Email: "user@mail.com", Password: "password1234"}
 
 	mockDB.On("BeginTx", mock.Anything).Return(mockTx, nil)
+	mockEnc.On("HashPassword", user.Password).Return("hashed", nil)
 	mockRepo.On("Save", mock.Anything, mockTx, user).Return(user, nil)
 	mockTx.On("Commit").Return(nil)
 
@@ -50,17 +55,22 @@ func TestUserService_Save_Failed(t *testing.T) {
 	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
 	mockDB := new(mocks.MockDatabase)
 	mockRepo := new(mocks.MockUserRepository)
+	mockEnc := new(mocks.MockEncryptor)
+	mockCache := new(mocks.MockCache)
 	mockTx := new(mocks.MockTransaction)
 
 	service := &services.UserServiceImpl{
 		DB:             mockDB,
 		UserRepository: mockRepo,
+		Encryptor:      mockEnc,
+		Cache:          mockCache,
 		CtxTimeout:     2 * time.Second,
 	}
 
-	user := &entities.User{Id: "", Email: "user@mail.com", Passcode: ""}
+	user := &entities.User{Id: "", Email: "user@mail.com", Password: "password1234"}
 
 	mockDB.On("BeginTx", mock.Anything).Return(mockTx, nil)
+	mockEnc.On("HashPassword", user.Password).Return("hashed", nil)
 	mockRepo.On("Save", mock.Anything, mockTx, user).Return(nil, errors.New("Error"))
 	mockTx.On("Rollback").Return(nil)
 
@@ -78,17 +88,22 @@ func TestUserService_Save_FailedCommit(t *testing.T) {
 	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
 	mockDB := new(mocks.MockDatabase)
 	mockRepo := new(mocks.MockUserRepository)
+	mockEnc := new(mocks.MockEncryptor)
+	mockCache := new(mocks.MockCache)
 	mockTx := new(mocks.MockTransaction)
 
 	service := &services.UserServiceImpl{
 		DB:             mockDB,
 		UserRepository: mockRepo,
+		Encryptor:      mockEnc,
+		Cache:          mockCache,
 		CtxTimeout:     2 * time.Second,
 	}
 
-	user := &entities.User{Id: "", Email: "user@mail.com", Passcode: ""}
+	user := &entities.User{Id: "", Email: "user@mail.com", Password: "password1234"}
 
 	mockDB.On("BeginTx", mock.Anything).Return(mockTx, nil)
+	mockEnc.On("HashPassword", user.Password).Return("hashed", nil)
 	mockRepo.On("Save", mock.Anything, mockTx, user).Return(user, nil)
 	mockTx.On("Commit").Return(errors.New("Error"))
 	mockTx.On("Rollback").Return(nil)
@@ -107,17 +122,22 @@ func TestUserService_Update_Success(t *testing.T) {
 	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
 	mockDB := new(mocks.MockDatabase)
 	mockRepo := new(mocks.MockUserRepository)
+	mockEnc := new(mocks.MockEncryptor)
+	mockCache := new(mocks.MockCache)
 	mockTx := new(mocks.MockTransaction)
 
 	service := &services.UserServiceImpl{
 		DB:             mockDB,
 		UserRepository: mockRepo,
+		Encryptor:      mockEnc,
+		Cache:          mockCache,
 		CtxTimeout:     2 * time.Second,
 	}
 
-	user := &entities.User{Id: "", Email: "user@mail.com", Passcode: ""}
+	user := &entities.User{Id: "", Email: "user@mail.com", Password: "password1234"}
 
 	mockDB.On("BeginTx", mock.Anything).Return(mockTx, nil)
+	mockEnc.On("HashPassword", user.Password).Return("hashed", nil)
 	mockRepo.On("Update", mock.Anything, mockTx, user).Return(user, nil)
 	mockTx.On("Commit").Return(nil)
 
@@ -135,17 +155,22 @@ func TestUserService_Update_UserNotFound(t *testing.T) {
 	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
 	mockDB := new(mocks.MockDatabase)
 	mockRepo := new(mocks.MockUserRepository)
+	mockEnc := new(mocks.MockEncryptor)
+	mockCache := new(mocks.MockCache)
 	mockTx := new(mocks.MockTransaction)
 
 	service := &services.UserServiceImpl{
 		DB:             mockDB,
 		UserRepository: mockRepo,
+		Encryptor:      mockEnc,
+		Cache:          mockCache,
 		CtxTimeout:     2 * time.Second,
 	}
 
-	user := &entities.User{Id: "", Email: "user@mail.com", Passcode: ""}
+	user := &entities.User{Id: "", Email: "user@mail.com", Password: "password1234"}
 
 	mockDB.On("BeginTx", mock.Anything).Return(mockTx, nil)
+	mockEnc.On("HashPassword", user.Password).Return("hashed", nil)
 	mockRepo.On("Update", mock.Anything, mockTx, user).Return(nil, appErrors.ErrUserNotFound)
 	mockTx.On("Rollback").Return(nil)
 
@@ -162,17 +187,22 @@ func TestUserService_Update_UserNotFound(t *testing.T) {
 	mockDB.AssertExpectations(t)
 	mockRepo.AssertExpectations(t)
 	mockTx.AssertExpectations(t)
+	mockEnc.AssertNotCalled(t, "HashPassword")
 }
 
 func TestUserService_Delete_Success(t *testing.T) {
 	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
 	mockDB := new(mocks.MockDatabase)
 	mockRepo := new(mocks.MockUserRepository)
+	mockEnc := new(mocks.MockEncryptor)
+	mockCache := new(mocks.MockCache)
 	mockTx := new(mocks.MockTransaction)
 
 	service := &services.UserServiceImpl{
 		DB:             mockDB,
 		UserRepository: mockRepo,
+		Encryptor:      mockEnc,
+		Cache:          mockCache,
 		CtxTimeout:     2 * time.Second,
 	}
 
@@ -195,11 +225,15 @@ func TestUserService_Delete_UserNotFound(t *testing.T) {
 	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
 	mockDB := new(mocks.MockDatabase)
 	mockRepo := new(mocks.MockUserRepository)
+	mockEnc := new(mocks.MockEncryptor)
+	mockCache := new(mocks.MockCache)
 	mockTx := new(mocks.MockTransaction)
 
 	service := &services.UserServiceImpl{
 		DB:             mockDB,
 		UserRepository: mockRepo,
+		Encryptor:      mockEnc,
+		Cache:          mockCache,
 		CtxTimeout:     2 * time.Second,
 	}
 
@@ -226,16 +260,20 @@ func TestUserService_FindById_Success(t *testing.T) {
 	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
 	mockDB := new(mocks.MockDatabase)
 	mockRepo := new(mocks.MockUserRepository)
+	mockEnc := new(mocks.MockEncryptor)
+	mockCache := new(mocks.MockCache)
 	mockTx := new(mocks.MockTransaction)
 
 	service := &services.UserServiceImpl{
 		DB:             mockDB,
 		UserRepository: mockRepo,
+		Encryptor:      mockEnc,
+		Cache:          mockCache,
 		CtxTimeout:     2 * time.Second,
 	}
 
 	userId := "ad24a17d-2925-4aa8-b077-d358a0788df7"
-	user := &entities.User{Id: userId, Email: "user@mail.com", Passcode: ""}
+	user := &entities.User{Id: userId, Email: "user@mail.com", Password: "password1234"}
 
 	mockDB.On("BeginTx", mock.Anything).Return(mockTx, nil)
 	mockRepo.On("FindById", mock.Anything, mockTx, userId).Return(user, nil)
@@ -255,11 +293,15 @@ func TestUserService_FindById_UserNotFound(t *testing.T) {
 	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
 	mockDB := new(mocks.MockDatabase)
 	mockRepo := new(mocks.MockUserRepository)
+	mockEnc := new(mocks.MockEncryptor)
+	mockCache := new(mocks.MockCache)
 	mockTx := new(mocks.MockTransaction)
 
 	service := &services.UserServiceImpl{
 		DB:             mockDB,
 		UserRepository: mockRepo,
+		Encryptor:      mockEnc,
+		Cache:          mockCache,
 		CtxTimeout:     2 * time.Second,
 	}
 
@@ -287,12 +329,14 @@ func TestUserService_FindAll_Success(t *testing.T) {
 	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
 	mockDB := new(mocks.MockDatabase)
 	mockRepo := new(mocks.MockUserRepository)
-	mockTx := new(mocks.MockTransaction)
+	mockEnc := new(mocks.MockEncryptor)
 	mockCache := new(mocks.MockCache)
+	mockTx := new(mocks.MockTransaction)
 
 	service := &services.UserServiceImpl{
 		DB:             mockDB,
 		UserRepository: mockRepo,
+		Encryptor:      mockEnc,
 		Cache:          mockCache,
 		CtxTimeout:     2 * time.Second,
 	}
@@ -301,13 +345,13 @@ func TestUserService_FindAll_Success(t *testing.T) {
 		{
 			Id:        "a234f98c-3239-4c34-8ad8-f63e41bb20c8", // Define userId directly here
 			Email:     "user1@mail.com",
-			Passcode:  "pass1",
+			Password:  "pass1",
 			CreatedAt: time.Date(2023, time.January, 15, 10, 0, 0, 0, time.UTC),
 		},
 		{
 			Id:        "b567g89d-4321-5d67-9fg0-g76h54ij32k1",
 			Email:     "user2@mail.com",
-			Passcode:  "pass2",
+			Password:  "pass2",
 			CreatedAt: time.Date(2023, time.February, 20, 11, 30, 0, 0, time.UTC),
 		},
 	}
@@ -333,12 +377,14 @@ func TestUserService_FindAll_SuccessCache(t *testing.T) {
 	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
 	mockDB := new(mocks.MockDatabase)
 	mockRepo := new(mocks.MockUserRepository)
-	mockTx := new(mocks.MockTransaction)
+	mockEnc := new(mocks.MockEncryptor)
 	mockCache := new(mocks.MockCache)
+	mockTx := new(mocks.MockTransaction)
 
 	service := &services.UserServiceImpl{
 		DB:             mockDB,
 		UserRepository: mockRepo,
+		Encryptor:      mockEnc,
 		Cache:          mockCache,
 		CtxTimeout:     2 * time.Second,
 	}
@@ -347,13 +393,13 @@ func TestUserService_FindAll_SuccessCache(t *testing.T) {
 		{
 			Id:        "a234f98c-3239-4c34-8ad8-f63e41bb20c8", // Define userId directly here
 			Email:     "user1@mail.com",
-			Passcode:  "pass1",
+			Password:  "pass1",
 			CreatedAt: time.Date(2023, time.January, 15, 10, 0, 0, 0, time.UTC),
 		},
 		{
 			Id:        "b567g89d-4321-5d67-9fg0-g76h54ij32k1",
 			Email:     "user2@mail.com",
-			Passcode:  "pass2",
+			Password:  "pass2",
 			CreatedAt: time.Date(2023, time.February, 20, 11, 30, 0, 0, time.UTC),
 		},
 	}

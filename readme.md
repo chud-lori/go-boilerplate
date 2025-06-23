@@ -66,14 +66,13 @@ A modern, production-ready Go boilerplate for building scalable web APIs and mic
 ├── mocks/                     # Mocks for interfaces used in tests
 │
 ├── pkg/                       # Reusable utilities across layers
-│   ├── auth/                  # Passcode generator and auth helpers
+│   ├── auth/                  # Password encryption and auth helpers
 │   ├── errors/                # Custom error definitions and wrappers
 │   └── logger/                # Logrus setup and log configuration
 │
 ├── proto/                     # Generated protobuf files for gRPC
 │
 ├── .env.example               # Example environment variables
-├── .env.docker                # Env vars used in Docker deployments
 ├── docker-compose.yml         # Docker Compose file for multi-service setup
 ├── Dockerfile                 # Docker build instructions for the API service
 ├── grafana-datasources.yml    # Grafana configuration for Loki log data source
@@ -104,7 +103,6 @@ A modern, production-ready Go boilerplate for building scalable web APIs and mic
 2. **Configure environment variables**
    ```sh
    cp .env.example .env
-   cp keys.env.example keys.env
    ```
 3. **Start services**
    ```sh
@@ -120,6 +118,10 @@ A modern, production-ready Go boilerplate for building scalable web APIs and mic
    make swagger
    ```
    Access at: `http://localhost:8080/docs/index.html`
+
+> Note: you can use this node code to generate `JWT_SECRET`
+
+`node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
 
 ---
 
