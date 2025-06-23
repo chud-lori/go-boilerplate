@@ -17,6 +17,7 @@ import (
 	"github.com/chud-lori/go-boilerplate/infrastructure/cache"
 	"github.com/chud-lori/go-boilerplate/infrastructure/datastore"
 	"github.com/chud-lori/go-boilerplate/internal/utils"
+	"github.com/chud-lori/go-boilerplate/pkg/auth"
 	"github.com/chud-lori/go-boilerplate/pkg/logger"
 	"github.com/joho/godotenv"
 	httpSwagger "github.com/swaggo/http-swagger"
@@ -29,14 +30,18 @@ import (
 // @BasePath /api
 
 // @securityDefinitions.apiKey ApiKeyAuth
-// @type apiKey
 // @in header
 // @name X-API-KEY
-func main() {
 
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Failed load keys")
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token. Example: "Bearer {token}"
+func main() {
+	// ========== Environment Setup ==========
+
+	if err := godotenv.Load(); err != nil {
+		log.Fatal("Failed to load environment variables")
 	}
 
 	cfg, err := config.LoadConfig()
@@ -46,54 +51,97 @@ func main() {
 
 	baseLogger := logger.NewLogger(cfg.LogLevel)
 
+	// ========== Infrastructure ==========
+
 	db, err := datastore.NewDatabase(cfg.DatabaseURL, baseLogger)
 	if err != nil {
-		baseLogger.Fatal("Failed to connect to database: ", err)
+		baseLogger.Fatal("Failed to connect to database:", err)
 	}
 	defer db.Close()
 
 	cache, err := cache.NewRedisCache(cfg.RedisAddr, cfg.RedisPassword, cfg.RedisDB, baseLogger)
 	if err != nil {
-		baseLogger.Fatal("Failed to connect to cache server: ", err)
+		baseLogger.Fatal("Failed to connect to cache server:", err)
 	}
 	defer cache.Close()
 
-	ctxTimeout := time.Duration(60) * time.Second
+	ctxTimeout := 60 * time.Second
 
-	userRepository := &repositories.UserRepositoryPostgre{DB: db}
+	// ========== Domain Service Dependencies ==========
+
+	encryptor := &auth.BcryptEncryptor{}
+	tokenManager := &auth.JWTManager{
+		SecretKey:  cfg.JwtSecret,
+		Expiration: 24 * time.Hour,
+	}
+
+	// ========== Repositories ==========
+
+	userRepo := &repositories.UserRepositoryPostgre{DB: db}
+
+	// ========== Services ==========
+
+	authService := &services.AuthServiceImpl{
+		DB:             db,
+		UserRepository: userRepo,
+		Encryptor:      encryptor,
+		TokenManager:   tokenManager,
+		CtxTimeout:     ctxTimeout,
+	}
+
 	userService := &services.UserServiceImpl{
 		DB:             db,
-		UserRepository: userRepository,
+		UserRepository: userRepo,
 		Cache:          cache,
 		CtxTimeout:     ctxTimeout,
 	}
+
+	// ========== Controllers ==========
+
+	authController := &controllers.AuthController{
+		AuthService: authService,
+	}
+
 	userController := &controllers.UserController{
 		UserService: userService,
 	}
 
+	// ========== Routers ==========
+
 	router := http.NewServeMux()
+
+	// Public routes
 	if cfg.AppEnv != "production" {
 		router.Handle("/docs/", httpSwagger.WrapHandler)
 	}
 
+	web.AuthRouter(authController, router)
+	// TODO: Add jwt middleware
 	web.UserRouter(userController, router)
+
+	// ========== Global Middleware Chain ==========
 
 	var handler http.Handler = router
 	handler = middleware.LogTrafficMiddleware(handler, baseLogger)
 	handler = middleware.APIKeyMiddleware(handler, cfg.APIKey, baseLogger)
+	handler = middleware.JWTMiddleware(handler, tokenManager, baseLogger)
+
+	// ========== HTTP Server Setup ==========
 
 	server := http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.ServerPort),
 		Handler: handler,
 	}
 
-	// Run server in a goroutine
+	// Start server in goroutine
 	go func() {
 		utils.Banner(cfg)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("HTTP server error: %v", err)
 		}
 	}()
+
+	// ========== Graceful Shutdown ==========
 
 	wait := utils.GracefullShutdown(context.Background(), 5*time.Second, map[string]utils.Operation{
 		"database": func(ctx context.Context) error {
