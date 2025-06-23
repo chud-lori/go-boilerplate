@@ -53,6 +53,17 @@ func (m *MockUserRepository) FindById(ctx context.Context, tx ports.Transaction,
 	return r0, r1
 }
 
+// FindByEmail provides a mock function with given fields: ctx, tx, id
+func (m *MockUserRepository) FindByEmail(ctx context.Context, tx ports.Transaction, email string) (*entities.User, error) {
+	args := m.Called(ctx, tx, email)
+	var r0 *entities.User
+	if args.Get(0) != nil {
+		r0 = args.Get(0).(*entities.User)
+	}
+	r1 := args.Error(1)
+	return r0, r1
+}
+
 // FindAll provides a mock function with given fields: ctx, tx
 func (m *MockUserRepository) FindAll(ctx context.Context, tx ports.Transaction) ([]*entities.User, error) {
 	args := m.Called(ctx, tx)
