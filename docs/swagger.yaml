@@ -1,13 +1,55 @@
 basePath: /api
 definitions:
-  dto.UserRequest:
-    description: Account creation payload
+  dto.AuthResponse:
+    properties:
+      id:
+        type: string
+      user:
+        $ref: '#/definitions/dto.UserResponse'
+    type: object
+  dto.AuthSignInRequest:
     properties:
       email:
         maxLength: 200
         minLength: 1
         type: string
-      passcode:
+      password:
+        maxLength: 30
+        minLength: 8
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  dto.AuthSignUpRequest:
+    properties:
+      confirm_password:
+        type: string
+      email:
+        maxLength: 200
+        minLength: 1
+        type: string
+      name:
+        maxLength: 8
+        minLength: 1
+        type: string
+      password:
+        maxLength: 30
+        minLength: 8
+        type: string
+    required:
+    - confirm_password
+    - email
+    - name
+    - password
+    type: object
+  dto.UserRequest:
+    properties:
+      email:
+        maxLength: 200
+        minLength: 1
+        type: string
+      password:
         maxLength: 8
         minLength: 1
         type: string
@@ -39,6 +81,75 @@ info:
   title: Go Boilerplate API
   version: "1.0"
 paths:
+  /signin:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate a user and return JWT token with user info
+      operationId: auth-signin
+      parameters:
+      - description: SignIn request
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/dto.AuthSignInRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully signed in user
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.WebResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.AuthResponse'
+              type: object
+        "400":
+          description: Invalid request payload or failed to sign in
+          schema:
+            $ref: '#/definitions/dto.WebResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Sign in an existing user
+      tags:
+      - Auth
+  /signup:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user with email and password, returning token and
+        user info
+      operationId: auth-signup
+      parameters:
+      - description: SignUp request
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/dto.AuthSignUpRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Successfully signed up user
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.WebResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.AuthResponse'
+              type: object
+        "400":
+          description: Invalid request payload or failed to sign up
+          schema:
+            $ref: '#/definitions/dto.WebResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Sign up a new user
+      tags:
+      - Auth
   /user:
     get:
       description: Retrieves a list of all users.
@@ -63,6 +174,7 @@ paths:
             $ref: '#/definitions/dto.WebResponse'
       security:
       - ApiKeyAuth: []
+      - BearerAuth: []
       summary: Get all users
       tags:
       - Users
@@ -97,6 +209,7 @@ paths:
             $ref: '#/definitions/dto.WebResponse'
       security:
       - ApiKeyAuth: []
+      - BearerAuth: []
       summary: Create a new user
       tags:
       - Users
@@ -127,6 +240,7 @@ paths:
             $ref: '#/definitions/dto.WebResponse'
       security:
       - ApiKeyAuth: []
+      - BearerAuth: []
       summary: Delete a user
       tags:
       - Users
@@ -165,6 +279,7 @@ paths:
             $ref: '#/definitions/dto.WebResponse'
       security:
       - ApiKeyAuth: []
+      - BearerAuth: []
       summary: Get user by ID
       tags:
       - Users
@@ -207,6 +322,7 @@ paths:
             $ref: '#/definitions/dto.WebResponse'
       security:
       - ApiKeyAuth: []
+      - BearerAuth: []
       summary: Update an existing user
       tags:
       - Users
@@ -214,5 +330,11 @@ securityDefinitions:
   ApiKeyAuth:
     in: header
     name: X-API-KEY
+    type: apiKey
+  BearerAuth:
+    description: 'Type "Bearer" followed by a space and JWT token. Example: "Bearer
+      {token}"'
+    in: header
+    name: Authorization
     type: apiKey
 swagger: "2.0"
