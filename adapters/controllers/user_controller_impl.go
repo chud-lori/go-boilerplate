@@ -36,9 +36,9 @@ func (controller *UserController) Create(w http.ResponseWriter, r *http.Request)
 	ctx := r.Context()
 	logger := ctx.Value(logger.LoggerContextKey).(*logrus.Entry)
 
-	userRequest := dto.UserRequest{}
+	userRequest := &dto.UserRequest{}
 
-	if err := helper.GetPayload(r, &userRequest); err != nil {
+	if err := helper.GetPayload(r, userRequest); err != nil {
 		logger.Error("Failed to get Payload: ", err)
 		helper.WriteResponse(w, dto.WebResponse{
 			Message: "Invalid request payload",
@@ -95,10 +95,11 @@ func (controller *UserController) Create(w http.ResponseWriter, r *http.Request)
 func (controller *UserController) Update(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	logger := ctx.Value(logger.LoggerContextKey).(*logrus.Entry)
+
 	userRequest := &dto.UserRequest{}
 	userId := r.PathValue("userId")
 
-	if err := helper.GetPayload(r, &userRequest); err != nil {
+	if err := helper.GetPayload(r, userRequest); err != nil {
 		logger.Error("Failed to get Payload: ", err)
 		helper.WriteResponse(w, dto.WebResponse{
 			Message: "Invalid request payload",

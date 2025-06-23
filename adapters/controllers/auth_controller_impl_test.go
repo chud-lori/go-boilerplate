@@ -146,7 +146,6 @@ func TestAuthController_SignUp_Success(t *testing.T) {
 	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
 
 	reqBody := &dto.AuthSignUpRequest{
-		Name:            "user",
 		Email:           "user@mail.com",
 		Password:        "password1234",
 		ConfirmPassword: "password1234",
@@ -226,7 +225,6 @@ func TestAuthController_SignUp_InvalidPassword(t *testing.T) {
 	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
 
 	reqBody := &dto.AuthSignUpRequest{
-		Name:            "user",
 		Email:           "user@mail.com",
 		Password:        "password1234",
 		ConfirmPassword: "password1224",
@@ -260,7 +258,6 @@ func TestAuthController_SignUp_InvalidEmail(t *testing.T) {
 	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
 
 	reqBody := &dto.AuthSignUpRequest{
-		Name:            "user",
 		Email:           "invalidemail",
 		Password:        "password1234",
 		ConfirmPassword: "password1234",

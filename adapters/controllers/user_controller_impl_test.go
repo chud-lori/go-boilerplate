@@ -31,7 +31,8 @@ func TestUserController_Create_Success(t *testing.T) {
 	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
 
 	reqBody := &dto.UserRequest{
-		Email: "user@mail.com",
+		Email:    "user@mail.com",
+		Password: "useruser",
 	}
 
 	bodyBytes, _ := json.Marshal(reqBody)
@@ -67,7 +68,8 @@ func TestUserController_Create_Failed(t *testing.T) {
 	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
 
 	reqBody := &dto.UserRequest{
-		Email: "user@mail.com",
+		Email:    "user@mail.com",
+		Password: "useruser",
 	}
 
 	bodyBytes, _ := json.Marshal(reqBody)
@@ -107,7 +109,7 @@ func TestUserController_Update_Success(t *testing.T) {
 
 	reqBody := &dto.UserRequest{
 		Email:    "user@mail.com",
-		Password: "IJHD9782",
+		Password: "useruser",
 	}
 	userId := "a234f98c-3239-4c34-8ad8-f63e41bb20c8"
 
@@ -121,7 +123,7 @@ func TestUserController_Update_Success(t *testing.T) {
 	user := &entities.User{
 		Id:       userId,
 		Email:    "user@mail.com",
-		Password: "IJHD9782",
+		Password: "useruser",
 	}
 
 	mockService.On("Update", mock.Anything, user).Return(user, nil)
@@ -147,7 +149,7 @@ func TestUserController_Update_UserNotFound(t *testing.T) {
 
 	reqBody := &dto.UserRequest{
 		Email:    "user@mail.com",
-		Password: "IJHD9782",
+		Password: "useruser",
 	}
 	userId := "a234f98c-3239-4c34-8ad8-f63e41bb20c8"
 
@@ -161,7 +163,7 @@ func TestUserController_Update_UserNotFound(t *testing.T) {
 	user := &entities.User{
 		Id:       userId,
 		Email:    "user@mail.com",
-		Password: "IJHD9782",
+		Password: "useruser",
 	}
 
 	mockError := appErrors.NewNotFoundError("User not found", nil)
@@ -190,7 +192,7 @@ func TestUserController_Update_Failed(t *testing.T) {
 
 	reqBody := &dto.UserRequest{
 		Email:    "user@mail.com",
-		Password: "IJHD9782",
+		Password: "useruser",
 	}
 	userId := "a234f98c-3239-4c34-8ad8-f63e41bb20c8"
 
@@ -204,7 +206,7 @@ func TestUserController_Update_Failed(t *testing.T) {
 	user := &entities.User{
 		Id:       userId,
 		Email:    "user@mail.com",
-		Password: "IJHD9782",
+		Password: "useruser",
 	}
 
 	mockService.On("Update", mock.Anything, user).Return(nil, errors.New("Errors"))
