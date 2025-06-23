@@ -11,12 +11,12 @@ func NewLogger(logLevel string) *logrus.Logger {
 	logger := logrus.New()
 	logger.SetFormatter(&logrus.JSONFormatter{})
 	logger.SetOutput(os.Stdout)
-	logger.SetReportCaller(true)
 
 	switch strings.ToLower(logLevel) {
 	case "trace":
 		logger.SetLevel(logrus.TraceLevel)
 	case "debug":
+		logger.SetReportCaller(true)
 		logger.SetLevel(logrus.DebugLevel)
 	case "info":
 		logger.SetLevel(logrus.InfoLevel)
