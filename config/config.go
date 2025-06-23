@@ -73,7 +73,7 @@ func LoadConfig() (*AppConfig, error) {
 	cfg.RedisDB = redisDB
 
 	// Version
-	cfg.Version = "0.2.0"
+	cfg.Version = "1.0.0"
 	cfg.JwtSecret = os.Getenv("JWT_SECRET")
 
 	return cfg, nil
