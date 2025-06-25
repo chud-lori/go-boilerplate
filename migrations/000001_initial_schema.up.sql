@@ -5,3 +5,13 @@ CREATE TABLE users (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id)
 );
+
+CREATE TABLE posts (
+    id uuid DEFAULT gen_random_uuid(),
+    title VARCHAR(255),
+    body text,
+    author_id uuid NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    FOREIGN KEY (author_id) REFERENCES users (id)
+);
