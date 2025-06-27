@@ -1,8 +1,12 @@
 package middleware
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
+	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -24,6 +28,13 @@ func newLoggingTraffic(w http.ResponseWriter) *loggingTraffic {
 func (lrw *loggingTraffic) WriteHeader(code int) {
 	lrw.statusCode = code
 	lrw.ResponseWriter.WriteHeader(code)
+}
+
+var sensitivePayloadKeys = map[string]struct{}{
+	"password":        {},
+	"credit_card_num": {},
+	"cvv":             {},
+	// Add more sensitive keys here
 }
 
 func LogTrafficMiddleware(next http.Handler, baseLogger *logrus.Logger) http.Handler {
@@ -56,12 +67,52 @@ func LogTrafficMiddleware(next http.Handler, baseLogger *logrus.Logger) http.Han
 
 		duration := time.Since(start)
 
-		newLogger.WithFields(logrus.Fields{
+		// --- Capture and Process Request Body ---
+		var requestBodyLog interface{}
+		var err error
+		var reqBodyBytes []byte
+
+		// Only read the body if it's a method that typically carries a body
+		if r.Body != nil && (r.Method == http.MethodPost || r.Method == http.MethodPut || r.Method == http.MethodPatch) {
+			reqBodyBytes, err = io.ReadAll(r.Body)
+			if err != nil {
+				newLogger.WithError(err).Warn("Failed to read request body")
+			} else {
+				// Restore the body for the next handler
+				r.Body = io.NopCloser(bytes.NewBuffer(reqBodyBytes))
+
+				// Attempt to unmarshal as JSON and exclude sensitive fields
+				if strings.Contains(r.Header.Get("Content-Type"), "application/json") {
+					var jsonBody map[string]interface{}
+					if err := json.Unmarshal(reqBodyBytes, &jsonBody); err == nil {
+						// Exclude sensitive fields
+						for key := range sensitivePayloadKeys {
+							delete(jsonBody, key) // This is the change: delete the key
+						}
+						requestBodyLog = jsonBody
+					} else {
+						newLogger.WithError(err).Debug("Request body is not valid JSON, logging as raw string.")
+						requestBodyLog = string(reqBodyBytes)
+					}
+				} else {
+					// Log non-JSON bodies as raw string
+					requestBodyLog = string(reqBodyBytes)
+				}
+			}
+		}
+
+		logFields := logrus.Fields{
 			"method":   r.Method,
 			"path":     r.URL.Path,
 			"duration": duration.String(),
 			"status":   lrw.statusCode,
-		}).Info("Processed request")
+			"query":    r.URL.RawQuery,
+		}
 
+		if requestBodyLog != nil {
+			logFields["request_body"] = requestBodyLog // Add processed request body
+		}
+
+		newLogger.WithFields(logFields).Info("Processed request")
 	})
 }
