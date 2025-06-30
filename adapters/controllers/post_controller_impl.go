@@ -232,7 +232,7 @@ func (c *PostController) Delete(w http.ResponseWriter, r *http.Request) {
 	postIdStr := r.PathValue("postId")
 	postId, err := uuid.Parse(postIdStr)
 	if err != nil {
-		logger.Warn("Invalid postId UUID:", postIdStr)
+		logger.Warnf("Invalid postId UUID: %s", postIdStr)
 		helper.WriteResponse(w, dto.WebResponse{
 			Message: "Invalid postId format",
 			Status:  0,
