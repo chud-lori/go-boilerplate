@@ -22,6 +22,7 @@ import (
 type PostServiceImpl struct {
 	DB ports.Database
 	ports.PostRepository
+	ports.UserRepository
 	ports.Cache
 	CtxTimeout time.Duration
 }
@@ -43,6 +44,11 @@ func (s *PostServiceImpl) Create(c context.Context, post *entities.Post) (*entit
 			tx.Rollback()
 		}
 	}()
+
+	_, err = s.UserRepository.FindById(ctx, tx, post.AuthorID.String())
+	if errors.Is(err, appErrors.ErrUserNotFound) {
+		return nil, appErrors.NewNotFoundError("Author not found", err)
+	}
 
 	result, err := s.PostRepository.Save(ctx, tx, post)
 
@@ -82,7 +88,7 @@ func (s *PostServiceImpl) Update(c context.Context, post *entities.Post) (*entit
 	result, err := s.PostRepository.Update(ctx, tx, post)
 
 	if err != nil {
-		if errors.Is(err, appErrors.ErrUserNotFound) {
+		if errors.Is(err, appErrors.ErrDataNotFound) {
 			logger.Errorf("PostID %d not found", post.ID)
 			return nil, appErrors.NewNotFoundError("Post not found", err)
 		}
@@ -136,7 +142,7 @@ func (s *PostServiceImpl) Delete(c context.Context, id uuid.UUID) error {
 		return err
 	}
 
-	if err := tx.Commit(); err != nil {
+	if err = tx.Commit(); err != nil {
 		logger.WithError(err).Error("Failed to commit transaction")
 		return err
 	}
@@ -175,7 +181,7 @@ func (s *PostServiceImpl) GetById(c context.Context, id uuid.UUID) (*entities.Po
 		return nil, err
 	}
 
-	if err := tx.Commit(); err != nil {
+	if err = tx.Commit(); err != nil {
 		logger.WithError(err).Error("Failed to commit transaction")
 		return nil, err
 	}
@@ -223,14 +229,14 @@ func (s *PostServiceImpl) GetAll(c context.Context, search string, page, limit i
 	posts, err = s.PostRepository.GetAll(ctx, tx, search, pagination)
 
 	if err != nil {
-		logger.WithError(err).Error("Failed to find all users")
+		logger.WithError(err).Error("Failed to get all posts")
 		return nil, err
 	}
 
-	usersString, _ := json.Marshal(&posts)
-	s.Cache.Set(c, cacheKey, usersString, 30*time.Second)
+	postsString, _ := json.Marshal(&posts)
+	s.Cache.Set(c, cacheKey, postsString, 30*time.Second)
 
-	if err := tx.Commit(); err != nil {
+	if err = tx.Commit(); err != nil {
 		logger.WithError(err).Error("Failed to commit transaction")
 		return nil, err
 	}
