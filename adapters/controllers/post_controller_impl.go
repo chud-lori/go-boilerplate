@@ -20,6 +20,20 @@ type PostController struct {
 	ports.PostService
 }
 
+// CreatePost godoc
+// @Summary Create a new post
+// @Description Creates a new post with the provided title, body, and author ID.
+// @ID create-post
+// @Tags Posts
+// @Accept json
+// @Produce json
+// @Param request body dto.CreatePostRequest true "Post creation request"
+// @Success 201 {object} dto.WebResponse{data=dto.PostResponse} "Successfully created post"
+// @Failure 400 {object} dto.WebResponse "Bad request or validation error"
+// @Failure 500 {object} dto.WebResponse "Internal server error"
+// @Router /post [post]
+// @Security ApiKeyAuth
+// @Security BearerAuth
 func (c *PostController) Create(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	logger := ctx.Value(logger.LoggerContextKey).(*logrus.Entry)
@@ -101,6 +115,21 @@ func (c *PostController) Create(w http.ResponseWriter, r *http.Request) {
 	helper.WriteResponse(w, resp, http.StatusCreated)
 }
 
+// UpdatePost godoc
+// @Summary Update an existing post
+// @Description Updates an existing post with the provided title, body, and author ID.
+// @ID update-post
+// @Tags Posts
+// @Accept json
+// @Produce json
+// @Param request body dto.CreatePostRequest true "Post update request"
+// @Success 200 {object} dto.WebResponse{data=dto.PostResponse} "Successfully updated post"
+// @Failure 400 {object} dto.WebResponse "Bad request or validation error"
+// @Failure 404 {object} dto.WebResponse "Post not found"
+// @Failure 500 {object} dto.WebResponse "Internal server error"
+// @Router /post [put]
+// @Security ApiKeyAuth
+// @Security BearerAuth
 func (c *PostController) Update(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	logger := ctx.Value(logger.LoggerContextKey).(*logrus.Entry)
@@ -182,6 +211,20 @@ func (c *PostController) Update(w http.ResponseWriter, r *http.Request) {
 	helper.WriteResponse(w, resp, http.StatusCreated)
 }
 
+// DeletePost godoc
+// @Summary Delete a post by ID
+// @Description Deletes a post based on the provided post ID.
+// @ID delete-post
+// @Tags Posts
+// @Produce json
+// @Param postId path string true "ID of the post to delete"
+// @Success 200 {object} dto.WebResponse "Successfully deleted post"
+// @Failure 400 {object} dto.WebResponse "Invalid post ID format"
+// @Failure 404 {object} dto.WebResponse "Post not found"
+// @Failure 500 {object} dto.WebResponse "Internal server error"
+// @Router /post/{postId} [delete]
+// @Security ApiKeyAuth
+// @Security BearerAuth
 func (c *PostController) Delete(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	logger := ctx.Value(logger.LoggerContextKey).(*logrus.Entry)
@@ -228,6 +271,19 @@ func (c *PostController) Delete(w http.ResponseWriter, r *http.Request) {
 	helper.WriteResponse(w, resp, http.StatusCreated)
 }
 
+// GetPostByID godoc
+// @Summary Get a post by ID
+// @Description Retrieves a single post based on the provided post ID.
+// @ID get-post-by-id
+// @Tags Posts
+// @Produce json
+// @Param postId path string true "ID of the post to retrieve"
+// @Success 200 {object} dto.WebResponse{data=entities.Post} "Successfully retrieved post"
+// @Failure 400 {object} dto.WebResponse "Invalid post ID format"
+// @Failure 404 {object} dto.WebResponse "Post not found"
+// @Failure 500 {object} dto.WebResponse "Internal server error"
+// @Router /post/{postId} [get]
+// @Security ApiKeyAuth
 func (c *PostController) GetById(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	logger := ctx.Value(logger.LoggerContextKey).(*logrus.Entry)
@@ -274,6 +330,19 @@ func (c *PostController) GetById(w http.ResponseWriter, r *http.Request) {
 	helper.WriteResponse(w, resp, http.StatusCreated)
 }
 
+// GetAllPosts godoc
+// @Summary Get all posts
+// @Description Retrieves a list of all posts. Supports optional filtering by search query and pagination.
+// @ID get-all-posts
+// @Tags Posts
+// @Produce json
+// @Param search query string false "Search term to filter posts by title or body"
+// @Param page query int false "Page number for pagination (default: 1)"
+// @Param limit query int false "Number of posts per page (default: 10)"
+// @Success 200 {object} dto.WebResponse{data=[]dto.PostResponse} "Successfully retrieved all posts"
+// @Failure 500 {object} dto.WebResponse "Internal server error"
+// @Router /post [get]
+// @Security ApiKeyAuth
 func (c *PostController) GetAll(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	//logger := ctx.Value(logger.LoggerContextKey).(*logrus.Entry)
