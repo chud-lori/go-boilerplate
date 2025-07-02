@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/chud-lori/go-boilerplate/infrastructure/cache"
+	"github.com/chud-lori/go-boilerplate/pkg/logger"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/testcontainers/testcontainers-go"
@@ -37,7 +38,7 @@ func setupRedisContainer(ctx context.Context) (testcontainers.Container, string,
 }
 
 func TestRedisCache(t *testing.T) {
-	ctx := context.Background()
+	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
 
 	// Start Redis container
 	redisC, addr, err := setupRedisContainer(ctx)
