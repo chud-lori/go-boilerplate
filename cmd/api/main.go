@@ -101,6 +101,7 @@ func main() {
 	postService := &services.PostServiceImpl{
 		DB:             db,
 		PostRepository: postRepo,
+		UserRepository: userRepo,
 		Cache:          cache,
 		CtxTimeout:     ctxTimeout,
 	}
