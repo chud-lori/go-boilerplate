@@ -16,7 +16,6 @@ import (
 )
 
 type UserRepositoryPostgre struct {
-	DB ports.Database
 }
 
 func (repository *UserRepositoryPostgre) Save(ctx context.Context, tx ports.Transaction, user *entities.User) (*entities.User, error) {

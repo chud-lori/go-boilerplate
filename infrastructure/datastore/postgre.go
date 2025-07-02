@@ -20,7 +20,7 @@ type Database struct {
 	db *sql.DB
 }
 
-func NewDatabase(dbURL string, logger *logrus.Logger) (ports.Database, error) {
+func NewPostgreDatabase(dbURL string, logger *logrus.Logger) (ports.Database, error) {
 	parseDBUrl, _ := url.Parse(dbURL)
 	dbLogger := logger.WithFields(logrus.Fields{
 		"layer":  "database",
