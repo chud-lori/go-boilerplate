@@ -53,7 +53,7 @@ func main() {
 
 	// ========== Infrastructure ==========
 
-	db, err := datastore.NewDatabase(cfg.DatabaseURL, baseLogger)
+	db, err := datastore.NewPostgreDatabase(cfg.DatabaseURL, baseLogger)
 	if err != nil {
 		baseLogger.Fatal("Failed to connect to database:", err)
 	}
@@ -77,7 +77,7 @@ func main() {
 
 	// ========== Repositories ==========
 
-	userRepo := &repositories.UserRepositoryPostgre{DB: db}
+	userRepo := &repositories.UserRepositoryPostgre{}
 	postRepo := &repositories.PostRepositoryPostgre{}
 
 	// ========== Services ==========
