@@ -43,7 +43,7 @@ func (r *PostRepositoryPostgre) Save(ctx context.Context, tx ports.Transaction, 
 func (r *PostRepositoryPostgre) Update(ctx context.Context, tx ports.Transaction, post *entities.Post) (*entities.Post, error) {
 	logger, _ := ctx.Value(logger.LoggerContextKey).(logrus.FieldLogger)
 
-	query := "UPDATE users SET title = $1, body = $2 WHERE id = $3"
+	query := "UPDATE posts SET title = $1, body = $2 WHERE id = $3"
 	result, err := tx.ExecContext(ctx, query, post.Title, post.Body, post.ID)
 
 	if err != nil {
@@ -58,7 +58,7 @@ func (r *PostRepositoryPostgre) Update(ctx context.Context, tx ports.Transaction
 	}
 
 	if rowsAffected == 0 {
-		logger.Error("User ID %s not found", post.ID)
+		logger.Errorf("Post ID %s not found", post.ID)
 		return nil, appErrors.ErrDataNotFound
 	}
 
@@ -102,13 +102,13 @@ func (r *PostRepositoryPostgre) GetById(ctx context.Context, tx ports.Transactio
 	return post, nil
 }
 
-func (r *PostRepositoryPostgre) GetALl(ctx context.Context, tx ports.Transaction, search string, pagination entities.PaginationParams) ([]entities.Post, error) {
+func (r *PostRepositoryPostgre) GetAll(ctx context.Context, tx ports.Transaction, search string, pagination entities.PaginationParams) ([]entities.Post, error) {
 	query := "SELECT id, title, body, author_id, created_at FROM posts WHERE 1=1"
 	args := []interface{}{}
 	argCounter := 1
 
 	if search != "" {
-		query += fmt.Sprintf(" AND title ILIKE $%d")
+		query += fmt.Sprintf(" AND title ILIKE $%d", argCounter)
 		args = append(args, "%"+search+"%")
 		argCounter++
 	}
