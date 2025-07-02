@@ -12,6 +12,7 @@ type AppError struct {
 }
 
 var ErrUserNotFound = errors.New("user not found")
+var ErrDataNotFound = errors.New("data not found")
 
 func (e *AppError) Error() string {
 	return e.Message

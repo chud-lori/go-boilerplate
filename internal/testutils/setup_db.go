@@ -2,12 +2,15 @@ package testutils
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
 
 	"github.com/chud-lori/go-boilerplate/domain/ports"
 	"github.com/chud-lori/go-boilerplate/infrastructure/datastore"
+	"github.com/chud-lori/go-boilerplate/pkg/logger"
 	"github.com/docker/go-connections/nat"
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
@@ -94,4 +97,25 @@ func SetupTestDBWithTestcontainers(t *testing.T) (ports.Database, func()) {
 	}
 
 	return db, terminate
+}
+
+// RunInTestTransaction sets up a database transaction for a test and handles rollback.
+// It accepts a test function that will receive the context and the transaction.
+// The `db` parameter is the *sql.DB connection (expected to be from SetupTestDBWithTestcontainers).
+func RunInTestTransaction(t *testing.T, db *sql.DB, testFunc func(ctx context.Context, tx *sql.Tx)) {
+	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.New()) // Ensure logger is available
+
+	tx, err := db.BeginTx(ctx, nil) // Using nil options for default isolation
+	require.NoError(t, err, "Failed to begin transaction for test")
+
+	// Defer rollback to ensure the transaction is always rolled back,
+	// keeping the test database clean and isolated from other tests.
+	defer func() {
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil && !errors.Is(rollbackErr, sql.ErrTxDone) {
+			t.Errorf("Error during test transaction rollback: %v", rollbackErr)
+		}
+	}()
+
+	testFunc(ctx, tx)
 }

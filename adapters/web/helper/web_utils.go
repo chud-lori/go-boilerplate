@@ -30,7 +30,7 @@ func GetPayload(request *http.Request, result interface{}) error {
 
 	if err != nil {
 		logger.WithError(err).Error("Failed to decode request payload")
-		return appErrors.NewBadRequestError("User not found", err)
+		return appErrors.NewBadRequestError("Invalid payload format", err)
 	}
 
 	// Validator

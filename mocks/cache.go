@@ -30,6 +30,12 @@ func (m *MockCache) Delete(ctx context.Context, key string) error {
 	return args.Error(0)
 }
 
+// InvalidateByPrefix mocks the InvalidateByPrefix method of the ports.Cache interface.
+func (m *MockCache) InvalidateByPrefix(ctx context.Context, prefix string) error {
+	args := m.Called(ctx, prefix)
+	return args.Error(0)
+}
+
 // Close mocks the Close method of the ports.Cache interface.
 func (m *MockCache) Close() error {
 	args := m.Called()

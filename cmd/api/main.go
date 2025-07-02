@@ -78,6 +78,7 @@ func main() {
 	// ========== Repositories ==========
 
 	userRepo := &repositories.UserRepositoryPostgre{DB: db}
+	postRepo := &repositories.PostRepositoryPostgre{}
 
 	// ========== Services ==========
 
@@ -97,6 +98,14 @@ func main() {
 		CtxTimeout:     ctxTimeout,
 	}
 
+	postService := &services.PostServiceImpl{
+		DB:             db,
+		PostRepository: postRepo,
+		UserRepository: userRepo,
+		Cache:          cache,
+		CtxTimeout:     ctxTimeout,
+	}
+
 	// ========== Controllers ==========
 
 	authController := &controllers.AuthController{
@@ -107,26 +116,9 @@ func main() {
 		UserService: userService,
 	}
 
-	// ========== Routers ==========
-	// router := http.NewServeMux()
-
-	// // Public routes (no JWT middleware)
-	// if cfg.AppEnv != "production" {
-	// 	router.Handle("/docs/", httpSwagger.WrapHandler)
-	// }
-	// web.AuthRouter(authController, router)
-
-	// // Protected routes (with JWT middleware)
-	// protectedRouter := http.NewServeMux()
-	// web.UserRouter(userController, protectedRouter)
-
-	// // Apply JWT middleware only to protected routes
-	// var protectedHandler http.Handler = protectedRouter
-	// protectedHandler = middleware.JWTMiddleware(protectedHandler, tokenManager, baseLogger)
-
-	// // Mount the protected handler to the main router
-	// router.Handle("/api/user/", http.StripPrefix("/api/user", protectedHandler))
-	// router.Handle("/api/user", protectedHandler)
+	postController := &controllers.PostController{
+		PostService: postService,
+	}
 
 	// ========== Routers ==========
 	router := http.NewServeMux()
@@ -141,6 +133,8 @@ func main() {
 
 	// Auth routes (public)
 	web.AuthRouter(authController, apiRouter)
+	// Post routes (public + protected)
+	web.PostRouter(postController, apiRouter, tokenManager, baseLogger)
 
 	// User routes (protected)
 	userRouter := http.NewServeMux()
@@ -151,6 +145,13 @@ func main() {
 	// Mount user routes to API router
 	apiRouter.Handle("/user", protectedUserHandler)
 	apiRouter.Handle("/user/", protectedUserHandler)
+
+	// postRouter := http.NewServeMux()
+	// web.PostRouter(postController, postRouter)
+	// var protectedPostHandler http.Handler = postRouter
+	// protectedPostHandler = middleware.JWTMiddleware(protectedPostHandler, tokenManager, baseLogger)
+	// apiRouter.Handle("/post", protectedPostHandler)
+	// apiRouter.Handle("/post/", protectedPostHandler)
 
 	// When you add more domains, just add them to apiRouter:
 	// productRouter := http.NewServeMux()

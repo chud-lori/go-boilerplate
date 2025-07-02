@@ -6,7 +6,7 @@ endif
 APP_NAME := service-app
 BUILD_DIR := bin
 DOCKER_IMAGE := service-app
-DOCKER_COMPOSE := docker-compose.yaml
+DOCKER_COMPOSE := docker-compose.yml
 
 all: migration-reset migration-up test build run
 
