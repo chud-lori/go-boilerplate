@@ -92,6 +92,7 @@ help:
 	@echo "  make run        Run the application locally"
 	@echo "  make clean      Remove built binaries"
 	@echo "  make swagger    Generate Swagger documentation"
+	@echo "  make run-grpc   Run gRPC Server"
 	@echo ""
 	@echo "Migration targets:"
 	@echo "  make migration-create name=your_migration_name   Create a new migration file"
