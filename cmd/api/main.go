@@ -23,6 +23,7 @@ import (
 	"github.com/joho/godotenv"
 	httpSwagger "github.com/swaggo/http-swagger"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 // @title Go Boilerplate API
@@ -67,20 +68,13 @@ func main() {
 	}
 	defer cache.Close()
 
-	// 1. Initialize gRPC client connection for mail service
-	mailGrpcConn, err := grpc.Dial(cfg.MailServer, grpc.WithInsecure()) // Use WithTransportCredentials for production
+	mailGrpcConn, err := grpc.NewClient(cfg.MailServer, grpc.WithTransportCredentials(insecure.NewCredentials())) // Use WithTransportCredentials for production
 	if err != nil {
 		log.Fatalf("did not connect to mail gRPC service: %v", err)
 	}
 	defer mailGrpcConn.Close()
 
-	// 2. Create the infrastructure-level MailClient
 	mailClient := grpc_clients.NewGrpcMailClient(mailGrpcConn)
-
-	// 3. Create the domain-level MailService
-	mailService := &services.MailServiceImpl{
-		MailClient: mailClient,
-	}
 
 	ctxTimeout := 60 * time.Second
 
@@ -90,6 +84,9 @@ func main() {
 	tokenManager := &auth.JWTManager{
 		SecretKey:  cfg.JwtSecret,
 		Expiration: 24 * time.Hour,
+	}
+	mailService := &services.MailServiceImpl{
+		MailClient: mailClient,
 	}
 
 	// ========== Repositories ==========
