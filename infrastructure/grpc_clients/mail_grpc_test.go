@@ -8,7 +8,9 @@ import (
 	"time"
 
 	"github.com/chud-lori/go-boilerplate/infrastructure/grpc_clients"
+	"github.com/chud-lori/go-boilerplate/pkg/logger"
 	pb "github.com/chud-lori/go-boilerplate/proto"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -71,6 +73,8 @@ func setupTestServer(t *testing.T) (*bufconn.Listener, *grpc.Server, *grpc.Clien
 }
 
 func TestGrpcMailClient_SendMail_Success(t *testing.T) {
+	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
+
 	lis, s, conn := setupTestServer(t)
 	defer conn.Close()
 	defer s.Stop()    // Explicitly stop the server
@@ -81,13 +85,15 @@ func TestGrpcMailClient_SendMail_Success(t *testing.T) {
 	email := "test@example.com"
 	message := "Hello, this is a test email."
 
-	err := client.SendMail(email, message)
+	err := client.SendMail(ctx, email, message)
 	if err != nil {
 		t.Errorf("SendMail failed unexpectedly: %v", err)
 	}
 }
 
 func TestGrpcMailClient_SendMail_InvalidInput(t *testing.T) {
+	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
+
 	lis, s, conn := setupTestServer(t)
 	defer conn.Close()
 	defer s.Stop()    // Explicitly stop the server
@@ -96,7 +102,7 @@ func TestGrpcMailClient_SendMail_InvalidInput(t *testing.T) {
 	client := grpc_clients.NewGrpcMailClient(conn)
 
 	// Test case: empty email
-	err := client.SendMail("", "Some message")
+	err := client.SendMail(ctx, "", "Some message")
 	if err == nil {
 		t.Error("SendMail did not return an error for empty email")
 	}
@@ -109,7 +115,7 @@ func TestGrpcMailClient_SendMail_InvalidInput(t *testing.T) {
 	}
 
 	// Test case: empty message
-	err = client.SendMail("test@example.com", "")
+	err = client.SendMail(ctx, "test@example.com", "")
 	if err == nil {
 		t.Error("SendMail did not return an error for empty message")
 	}

@@ -10,6 +10,7 @@ import (
 	"github.com/chud-lori/go-boilerplate/pkg/logger"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestMailService_SendSignInNotification_Success(t *testing.T) {
@@ -26,7 +27,7 @@ func TestMailService_SendSignInNotification_Success(t *testing.T) {
 
 	// Set up expectations for the mock MailClient
 	// We expect SendMail to be called with the email and the *constructed* message
-	mockMailClient.On("SendMail", email, notificationText).Return(nil)
+	mockMailClient.On("SendMail", mock.Anything, email, notificationText).Return(nil)
 
 	// Call the service method
 	err := service.SendSignInNotification(ctx, email, notificationText)
@@ -51,7 +52,7 @@ func TestMailService_SendSignInNotification_MailClientError(t *testing.T) {
 
 	// Simulate an error from the MailClient
 	mailClientErr := fmt.Errorf("failed to send mail via client")
-	mockMailClient.On("SendMail", email, notificationText).Return(mailClientErr)
+	mockMailClient.On("SendMail", mock.Anything, email, notificationText).Return(mailClientErr)
 
 	// Call the service method
 	err := service.SendSignInNotification(ctx, email, notificationText)
