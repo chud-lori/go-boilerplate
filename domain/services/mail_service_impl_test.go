@@ -7,10 +7,14 @@ import (
 
 	"github.com/chud-lori/go-boilerplate/domain/services"
 	"github.com/chud-lori/go-boilerplate/mocks"
+	"github.com/chud-lori/go-boilerplate/pkg/logger"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestMailService_SendSignInNotification_Success(t *testing.T) {
+	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
+
 	mockMailClient := new(mocks.MockMailClient) // Assuming you have a mock for MailClient
 
 	service := &services.MailServiceImpl{
@@ -20,15 +24,12 @@ func TestMailService_SendSignInNotification_Success(t *testing.T) {
 	email := "test@example.com"
 	notificationText := "User logged in just now" // This is the 'text' argument for SendSignInNotification
 
-	// The message constructed inside SendSignInNotification is "Notif sent"
-	expectedMailMessage := fmt.Sprintf("Notif sent")
-
 	// Set up expectations for the mock MailClient
 	// We expect SendMail to be called with the email and the *constructed* message
-	mockMailClient.On("SendMail", email, expectedMailMessage).Return(nil)
+	mockMailClient.On("SendMail", email, notificationText).Return(nil)
 
 	// Call the service method
-	err := service.SendSignInNotification(context.Background(), email, notificationText)
+	err := service.SendSignInNotification(ctx, email, notificationText)
 
 	// Assertions
 	assert.NoError(t, err) // Expect no error
@@ -38,6 +39,8 @@ func TestMailService_SendSignInNotification_Success(t *testing.T) {
 }
 
 func TestMailService_SendSignInNotification_MailClientError(t *testing.T) {
+	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
+
 	mockMailClient := new(mocks.MockMailClient)
 	service := &services.MailServiceImpl{
 		MailClient: mockMailClient,
@@ -45,14 +48,13 @@ func TestMailService_SendSignInNotification_MailClientError(t *testing.T) {
 
 	email := "test@example.com"
 	notificationText := "User logged in just now"
-	expectedMailMessage := fmt.Sprintf("Notif sent")
 
 	// Simulate an error from the MailClient
 	mailClientErr := fmt.Errorf("failed to send mail via client")
-	mockMailClient.On("SendMail", email, expectedMailMessage).Return(mailClientErr)
+	mockMailClient.On("SendMail", email, notificationText).Return(mailClientErr)
 
 	// Call the service method
-	err := service.SendSignInNotification(context.Background(), email, notificationText)
+	err := service.SendSignInNotification(ctx, email, notificationText)
 
 	// Assertions
 	assert.Error(t, err)                             // Expect an error

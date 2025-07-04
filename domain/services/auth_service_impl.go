@@ -60,7 +60,7 @@ func (s *AuthServiceImpl) SignIn(c context.Context, user *entities.User) (*entit
 		return nil, "", err
 	}
 
-	err = s.MailService.SendSignInNotification(foundUser.Email, "User logged in just now")
+	err = s.MailService.SendSignInNotification(ctx, foundUser.Email, "User logged in just now")
 	if err != nil {
 		logger.WithError(err).Error("Failed to send mail")
 		return nil, "", err

@@ -1,5 +1,7 @@
 package ports
 
+import "context"
+
 type MailService interface {
-	SendSignInNotification(email, text string) error
+	SendSignInNotification(ctx context.Context, email, text string) error
 }

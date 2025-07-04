@@ -21,6 +21,7 @@ func TestAuthService_SignIn_Success(t *testing.T) {
 	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
 	mockDB := new(mocks.MockDatabase)
 	mockRepo := new(mocks.MockUserRepository)
+	mockMailSrv := new(mocks.MockMailService)
 	mockEnc := new(mocks.MockEncryptor)
 	mockToken := new(mocks.MockTokenManager)
 	mockTx := new(mocks.MockTransaction)
@@ -28,6 +29,7 @@ func TestAuthService_SignIn_Success(t *testing.T) {
 	service := &services.AuthServiceImpl{
 		DB:             mockDB,
 		UserRepository: mockRepo,
+		MailService:    mockMailSrv,
 		Encryptor:      mockEnc,
 		TokenManager:   mockToken,
 		CtxTimeout:     2 * time.Second,
@@ -41,6 +43,7 @@ func TestAuthService_SignIn_Success(t *testing.T) {
 	mockEnc.On("CompareHash", foundUser.Password, mockUser.Password).Return(nil)
 	mockToken.On("GenerateToken", mockUser.Id).Return("generatedtoken", nil)
 	mockTx.On("Commit").Return(nil)
+	mockMailSrv.On("SendSignInNotification", mock.Anything, foundUser.Email, "User logged in just now").Return(nil)
 
 	_, token, err := service.SignIn(ctx, mockUser)
 
@@ -49,6 +52,7 @@ func TestAuthService_SignIn_Success(t *testing.T) {
 
 	mockDB.AssertExpectations(t)
 	mockRepo.AssertExpectations(t)
+	mockMailSrv.AssertExpectations(t)
 	mockEnc.AssertExpectations(t)
 	mockToken.AssertExpectations(t)
 	mockTx.AssertExpectations(t)
