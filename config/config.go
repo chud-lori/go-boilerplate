@@ -2,8 +2,11 @@ package config
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strconv"
+
+	"github.com/joho/godotenv"
 )
 
 type AppConfig struct {
@@ -13,9 +16,9 @@ type AppConfig struct {
 	AppEnv        string
 	CtxTimeout    int
 	LogLevel      string
-	RedisAddr     string // New: Redis server address
-	RedisPassword string // New: Redis password (can be empty)
-	RedisDB       int    // New: Redis DB number
+	RedisAddr     string
+	RedisPassword string
+	RedisDB       int
 	Version       string
 	JwtSecret     string
 	MailServer    string
@@ -73,11 +76,41 @@ func LoadConfig() (*AppConfig, error) {
 	}
 	cfg.RedisDB = redisDB
 
-	cfg.MailServer = os.Getenv("MAIL_GRPC_SERVER") // Can be empty
+	cfg.MailServer = os.Getenv("MAIL_GRPC_SERVER")
 
 	// Version
 	cfg.Version = "1.0.0"
 	cfg.JwtSecret = os.Getenv("JWT_SECRET")
 
 	return cfg, nil
+}
+
+type MailConfig struct {
+	Host string
+	Port int
+	User string
+	Pass string
+	From string
+}
+
+var Mail MailConfig
+
+func LoadMailConfig() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("⚠️ No .env file found or error reading it")
+	}
+
+	port, err := strconv.Atoi(os.Getenv("GRPC_MAIL_PORT"))
+	if err != nil {
+		port = 2525 // default fallback
+	}
+
+	Mail = MailConfig{
+		Host: os.Getenv("GRPC_MAIL_HOST"),
+		Port: port,
+		User: os.Getenv("GRPC_MAIL_USER"),
+		Pass: os.Getenv("GRPC_MAIL_PASS"),
+		From: os.Getenv("GRPC_MAIL_FROM"),
+	}
 }

@@ -11,17 +11,17 @@ A modern, production-ready Go boilerplate for building scalable web APIs and mic
 
 ## ✨ Features
 
-- **Clean Architecture**: Separation of concerns with `domain`, `adapters`, and `infrastructure` layers.
+- **Clean Architecture**: Separation of concerns with domain, adapters, and infrastructure layers.
 - **REST API**: User CRUD endpoints with DTOs, controllers, and routing.
-- **gRPC Support**: Example gRPC service (`Mail`) with protobuf definitions and testable client/server.
-- **Caching (Redis)**: In-memory caching with Redis through a `Cache` interface for performance optimization.
+- **gRPC Support**: Example gRPC service (Mail) with protobuf definitions and testable client/server.
+- **Caching (Redis)**: In-memory caching with Redis through a Cache interface for performance optimization.
 - **PostgreSQL Integration**: Repository pattern with transaction support, migrations, and test containers for DB testing.
 - **Database Migrations**: Built-in support with [golang-migrate](https://github.com/golang-migrate/migrate).
 - **Middleware**: Logging, API key authentication, and request context propagation.
 - **Logging**: Structured logging with Logrus, configurable log levels.
 - **Error Handling**: Centralized error types and helpers.
 - **Testing**: Extensive unit and integration tests with mocks and test containers.
-- **Dockerized**: Dockerfile and `docker-compose.yml` for local development and deployment.
+- **Dockerized**: Dockerfile and docker-compose.yml for local development and deployment.
 - **Observability**: Loki/Promtail/Grafana stack for log aggregation and visualization.
 - **Swagger Docs**: Built-in support for Swagger API documentation with [Swag CLI](https://github.com/swaggo/swag).
 
@@ -34,57 +34,57 @@ A modern, production-ready Go boilerplate for building scalable web APIs and mic
 │   ├── controllers/           # HTTP handlers implementing input ports
 │   ├── middleware/            # HTTP middleware (e.g., logging, API key auth)
 │   ├── repositories/          # DB implementation of domain repositories
-│   └── web/                   # Web utilities
+│   └── web/                   # Web utilities including DTOs and helpers
 │       ├── dto/               # Request/response DTO structs
-│       ├── helper/            # Helper functions for web layer
+│       ├── helper/            # Helper functions for the web layer
 │       └── routes.go          # HTTP route registration
 │
-├── cmd/
-│   └── api/                   # Application entry point (`main.go`)
+├── cmd/                      # Application entry points
+│   ├── api/                   # Main REST API entry point
+│   └── grpcserver/            # Main gRPC mail server entry point
 │
-├── config/                    # Application configuration loading and parsing
+├── config/                   # Application configuration loading and parsing
 │
-├── docs/                      # Swagger documentation (auto-generated)
+├── docs/                     # Swagger documentation (auto-generated)
 │
 ├── domain/                   # Core business logic layer (Clean Architecture)
-│   ├── entities/              # Domain entities (e.g., User)
-│   ├── ports/                 # Interfaces for services, repositories, cache, etc.
+│   ├── entities/              # Domain entities (e.g., User, Post)
+│   ├── ports/                 # Interfaces for controllers, services, repos, etc.
 │   └── services/              # Application use case implementations
 │
-├── grpc_service/              # gRPC server/client implementation
-│
-├── infrastructure/
+├── infrastructure/           # External infrastructure implementations
 │   ├── cache/                 # Redis cache implementation
-│   └── datastore/             # Database setup and connection logic
+│   ├── datastore/             # PostgreSQL DB setup and connection logic
+│   └── grpc_clients/          # gRPC clients used by the application
 │
-├── internal/
+├── internal/                 # Internal packages
 │   ├── testutils/             # Helpers and setup for tests
-│   └── utils/                 # Internal utilities like graceful shutdown
+│   └── utils/                 # Internal utilities (e.g., graceful shutdown)
 │
-├── migrations/                # SQL migration files for `golang-migrate`
+├── migrations/               # SQL migration files for golang-migrate
 │
-├── mocks/                     # Mocks for interfaces used in tests
+├── mocks/                    # Mocks for interfaces used in unit tests
 │
-├── pkg/                       # Reusable utilities across layers
-│   ├── auth/                  # Password encryption and auth helpers
-│   ├── errors/                # Custom error definitions and wrappers
-│   └── logger/                # Logrus setup and log configuration
+├── pkg/                      # Reusable utilities across layers
+│   ├── auth/                  # Encryption, JWT, and passcode helpers
+│   ├── errors/                # Custom error definitions and validation logic
+│   └── logger/                # Logrus setup and logger abstraction
 │
-├── proto/                     # Generated protobuf files for gRPC
+├── proto/                    # Generated protobuf files for gRPC
 │
-├── .env.example               # Example environment variables
-├── docker-compose.yml         # Docker Compose file for multi-service setup
-├── Dockerfile                 # Docker build instructions for the API service
-├── grafana-datasources.yml    # Grafana configuration for Loki log data source
-├── init.sql                   # Optional DB init script for Postgres service
-├── mail.proto                 # Protobuf service definition for gRPC
-├── Makefile                   # Developer automation (test, build, run, migrate)
-├── promtail.yml               # Promtail config for log shipping to Loki
-├── go.mod                     # Go module definition
-├── go.sum                     # Go module checksums
-└── readme.md                  # Project documentation (you’re here!)
+├── Dockerfile                # Docker build instructions for API service
+├── docker-compose.yml        # Docker Compose for service orchestration
+├── grafana-datasources.yml   # Grafana configuration for Loki
+├── init.sql                  # Optional DB init script for Postgres service
+├── mail.proto                # Protobuf definition for gRPC Mail service
+├── Makefile                  # Developer automation (build, run, test)
+├── promtail.yml              # Promtail config for log shipping to Loki
+├── .env.example              # Example environment variables file
+├── go.mod                    # Go module definition
+├── go.sum                    # Go module checksums
+├── LICENSE                   # License information
+└── readme.md                 # Project documentation (you’re here!)
 ```
-
 
 ---
 
@@ -100,63 +100,94 @@ A modern, production-ready Go boilerplate for building scalable web APIs and mic
 ### 🧑‍💻 Local Development
 
 1. **Clone the repo**
+
 2. **Configure environment variables**
-   ```sh
-   cp .env.example .env
-   ```
+
+```sh
+cp .env.example .env
+```
+
 3. **Start services**
-   ```sh
-   make up
-   ```
+
+```sh
+make up
+```
 
 4. **API Endpoints**
    - REST: `POST /api/user`, `PUT /api/user/{userId}`, etc.
-   - gRPC: See [`grpc_service/`](grpc_service/) and [`mail.proto`](mail.proto)
+   - gRPC: See [`cmd/grpcserver/`](cmd/grpcserver/) and [`mail.proto`](mail.proto)
 
 5. **Swagger Docs**
-   ```sh
-   make swagger
-   ```
-   Access at: `http://localhost:8080/docs/index.html`
 
-> Note: you can use this node code to generate `JWT_SECRET`
+```sh
+make swagger
+```
 
-`node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
+Access at: [http://localhost:8080/docs/index.html](http://localhost:8080/docs/index.html)
+
+> 💡 Tip: You can use this Node.js command to generate a `JWT_SECRET`:
+
+```sh
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+<!-- Add after "Local Development" or as a new section -->
+
+---
+
+### ⚡️ Running the gRPC Mail Server
+
+> **Note:** The Auth service now sends mail using gRPC and expects a mail gRPC server running at `localhost:50051`.
+> You must start the gRPC mail server for the boilerplate to function correctly.
+
+#### 1. Start the gRPC Mail Server
+
+Run the gRPC Server using this command:
+
+```sh
+go run cmd/grpcserver/main.go
+```
+
+Or, using Makefile:
+
+```sh
+make run-grpc
+```
+
+#### 2. Confirm the server is running
+
+The gRPC server should listen on `localhost:50051`.
+The Auth service will connect to this address to send mail.
 
 ---
 
-### ⚡️ gRPC Mail Server Requirement
-
-> **Note:** This boilerplate includes a gRPC client in the Auth service for sending mail.
-> You must have a compatible gRPC mail server (as defined in [`mail.proto`](mail.proto)) running at `localhost:50051` for full functionality.
-
-- The Auth service will attempt to connect to `localhost:50051` to send mail via gRPC.
-- Please ensure your gRPC mail server is running and implements the service as specified in the provided protobuf definition.
-
----
 
 ### 🐳 Running with Docker
 
 1. **Create Docker environment file**
-   ```sh
-   cp .env.example .env.docker
-   ```
 
-2. **Edit `.env.docker`** to set environment variables specifically for your Docker deployment, e.g.:
-   ```
-   DB_NAME=service_db
-   PSQL_USER=postgres
-   PSQL_PASSWORD=root
-   DATABASE_URL=postgres://postgres:root@service-postgres:5432/service_db?sslmode=disable
-   REDIS_URL=redis://service-redis:6379
-   ```
+```sh
+cp .env.example .env.docker
+```
+
+2. **Edit `.env.docker`** to set environment variables for Docker deployment:
+
+```env
+DB_NAME=service_db
+PSQL_USER=postgres
+PSQL_PASSWORD=root
+DATABASE_URL=postgres://postgres:root@service-postgres:5432/service_db?sslmode=disable
+REDIS_URL=redis://service-redis:6379
+```
 
 3. **Start containers**
-   ```sh
-   docker-compose up --build
-   ```
 
-> 📝 Note: `.env.docker` will be used in `docker-compose.yml` via the `env_file` section. The application container will load this file at runtime by copying it as `.env`.
+```sh
+docker-compose up --build
+```
+
+> 📝 `.env.docker` will be used by `docker-compose.yml` via the `env_file` section.
+> The app will treat it as `.env` at runtime.
 
 ---
 
@@ -166,17 +197,17 @@ A modern, production-ready Go boilerplate for building scalable web APIs and mic
 make test
 ```
 
-- Unit tests for services and helpers.
-- Integration tests using [testcontainers-go](https://github.com/testcontainers/testcontainers-go) for PostgreSQL and Redis.
+- Unit tests for services and helpers
+- Integration tests using [testcontainers-go](https://github.com/testcontainers/testcontainers-go) for PostgreSQL and Redis
 
 ---
 
 ## 🔁 Caching (Redis)
 
-- **Redis** is integrated as a caching layer via the `Cache` interface in `domain/ports/cache.go`.
+- **Redis** is integrated via the `Cache` interface (`domain/ports/cache.go`)
 - **Usage**:
-  - Store and retrieve values via `Set`, `Get`, `Delete`.
-  - Injected directly into services for cache-first logic (e.g., `GetUser()` → check cache → fallback to DB).
+  - Cache values with `Set`, retrieve with `Get`, delete with `Delete`
+  - Used in services for cache-first logic (e.g., `GetUser()` → check cache → fallback to DB)
 - **Implementation**: `infrastructure/cache/redis_cache.go`
 - **Tested via**: [testcontainers-go](https://github.com/testcontainers/testcontainers-go)
 
@@ -184,18 +215,20 @@ make test
 
 ## 📊 Logging & Observability
 
-- **Structured Logs**: Using Logrus, output to console or file.
-- **Grafana + Loki + Promtail**:
-  - View logs via `http://localhost:3000` (Grafana)
-  - Configured through `docker-compose.yml` and `promtail.yml`
+- **Structured Logging**: Logrus used for consistent, leveled logs
+- **Grafana + Loki + Promtail** stack:
+  - Access Grafana at: [http://localhost:3000](http://localhost:3000)
+  - Logs shipped by Promtail and stored by Loki
+  - Configured in `promtail.yml` and `grafana-datasources.yml`
 
 ---
 
 ## 🧱 Extending
 
-- Add new entities and repositories in `domain/` and `adapters/repositories/`.
-- Add gRPC services in `proto/` and regenerate stubs.
-- Add middleware in `adapters/middleware/`.
+- Add new entities in `domain/entities/` and update related ports/services
+- Add repositories in `adapters/repositories/`
+- Add gRPC services to `proto/`, regenerate stubs using `protoc`
+- Add middleware in `adapters/middleware/`
 
 ---
 

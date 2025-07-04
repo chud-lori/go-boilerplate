@@ -50,6 +50,10 @@ swagger:
 	@echo "Generating Swagger documentation..."
 	@swag init -g cmd/api/main.go
 
+# ====== GRPC ======
+run-grpc:
+	@go run ./cmd/grpcserver/main.go
+
 # ====== DOCKER COMMANDS ======
 
 docker-build:
@@ -88,6 +92,7 @@ help:
 	@echo "  make run        Run the application locally"
 	@echo "  make clean      Remove built binaries"
 	@echo "  make swagger    Generate Swagger documentation"
+	@echo "  make run-grpc   Run gRPC Server"
 	@echo ""
 	@echo "Migration targets:"
 	@echo "  make migration-create name=your_migration_name   Create a new migration file"
@@ -101,6 +106,6 @@ help:
 	@echo "  make down           Stop Docker Compose stack"
 	@echo "  make rebuild        Full Docker rebuild and restart"
 
-.PHONY: all test deps build swagger run clean help \
+.PHONY: all test deps build swagger run clean help run-grpc \
         docker-build docker-test up down rebuild migration-create \
 		migration-up migration-down
