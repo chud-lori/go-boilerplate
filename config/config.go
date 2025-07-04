@@ -16,9 +16,9 @@ type AppConfig struct {
 	AppEnv        string
 	CtxTimeout    int
 	LogLevel      string
-	RedisAddr     string // New: Redis server address
-	RedisPassword string // New: Redis password (can be empty)
-	RedisDB       int    // New: Redis DB number
+	RedisAddr     string
+	RedisPassword string
+	RedisDB       int
 	Version       string
 	JwtSecret     string
 	MailServer    string
@@ -76,7 +76,7 @@ func LoadConfig() (*AppConfig, error) {
 	}
 	cfg.RedisDB = redisDB
 
-	cfg.MailServer = os.Getenv("MAIL_GRPC_SERVER") // Can be empty
+	cfg.MailServer = os.Getenv("MAIL_GRPC_SERVER")
 
 	// Version
 	cfg.Version = "1.0.0"
