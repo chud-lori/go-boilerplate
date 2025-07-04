@@ -15,7 +15,7 @@ type MailServiceImpl struct {
 func (s *MailServiceImpl) SendSignInNotification(ctx context.Context, email, text string) error {
 	logger, _ := ctx.Value(logger.LoggerContextKey).(logrus.FieldLogger)
 
-	err := s.MailClient.SendMail(email, text)
+	err := s.MailClient.SendMail(ctx, email, text)
 	if err != nil {
 		logger.WithError(err).Error("Error send notif")
 		return err

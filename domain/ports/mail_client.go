@@ -1,5 +1,7 @@
 package ports
 
+import "context"
+
 type MailClient interface {
-	SendMail(email string, message string) error
+	SendMail(ctx context.Context, email string, message string) error
 }
