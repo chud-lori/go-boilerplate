@@ -16,11 +16,14 @@ import (
 	"github.com/chud-lori/go-boilerplate/domain/services"
 	"github.com/chud-lori/go-boilerplate/infrastructure/cache"
 	"github.com/chud-lori/go-boilerplate/infrastructure/datastore"
+	"github.com/chud-lori/go-boilerplate/infrastructure/grpc_clients"
 	"github.com/chud-lori/go-boilerplate/internal/utils"
 	"github.com/chud-lori/go-boilerplate/pkg/auth"
 	"github.com/chud-lori/go-boilerplate/pkg/logger"
 	"github.com/joho/godotenv"
 	httpSwagger "github.com/swaggo/http-swagger"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 // @title Go Boilerplate API
@@ -65,6 +68,14 @@ func main() {
 	}
 	defer cache.Close()
 
+	mailGrpcConn, err := grpc.NewClient(cfg.MailServer, grpc.WithTransportCredentials(insecure.NewCredentials())) // Use WithTransportCredentials for production
+	if err != nil {
+		log.Fatalf("did not connect to mail gRPC service: %v", err)
+	}
+	defer mailGrpcConn.Close()
+
+	mailClient := grpc_clients.NewGrpcMailClient(mailGrpcConn)
+
 	ctxTimeout := 60 * time.Second
 
 	// ========== Domain Service Dependencies ==========
@@ -73,6 +84,9 @@ func main() {
 	tokenManager := &auth.JWTManager{
 		SecretKey:  cfg.JwtSecret,
 		Expiration: 24 * time.Hour,
+	}
+	mailService := &services.MailServiceImpl{
+		MailClient: mailClient,
 	}
 
 	// ========== Repositories ==========
@@ -85,6 +99,7 @@ func main() {
 	authService := &services.AuthServiceImpl{
 		DB:             db,
 		UserRepository: userRepo,
+		MailService:    mailService,
 		Encryptor:      encryptor,
 		TokenManager:   tokenManager,
 		CtxTimeout:     ctxTimeout,

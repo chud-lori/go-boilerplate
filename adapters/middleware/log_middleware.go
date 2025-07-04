@@ -47,15 +47,8 @@ func LogTrafficMiddleware(next http.Handler, baseLogger *logrus.Logger) http.Han
 		}
 
 		newLogger := baseLogger.WithField("RequestID", requestID)
-
 		ctx := context.WithValue(r.Context(), "logger", newLogger)
-
 		r = r.WithContext(ctx)
-
-		lrw := newLoggingTraffic(w)
-
-		// call the next handler
-		next.ServeHTTP(lrw, r)
 
 		// TODO: if showing source in log
 		// baseLogger.SetReportCaller(true)
@@ -64,8 +57,6 @@ func LogTrafficMiddleware(next http.Handler, baseLogger *logrus.Logger) http.Han
 		//if ok {
 		//    source = fmt.Sprintf("%s:%d", file, line)
 		//}
-
-		duration := time.Since(start)
 
 		// --- Capture and Process Request Body ---
 		var requestBodyLog interface{}
@@ -100,6 +91,11 @@ func LogTrafficMiddleware(next http.Handler, baseLogger *logrus.Logger) http.Han
 				}
 			}
 		}
+
+		lrw := newLoggingTraffic(w)
+		// call the next handler
+		next.ServeHTTP(lrw, r)
+		duration := time.Since(start)
 
 		logFields := logrus.Fields{
 			"method":   r.Method,

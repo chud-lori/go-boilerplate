@@ -18,6 +18,7 @@ type AppConfig struct {
 	RedisDB       int    // New: Redis DB number
 	Version       string
 	JwtSecret     string
+	MailServer    string
 }
 
 func LoadConfig() (*AppConfig, error) {
@@ -71,6 +72,8 @@ func LoadConfig() (*AppConfig, error) {
 		return nil, fmt.Errorf("invalid REDIS_DB: %w", err)
 	}
 	cfg.RedisDB = redisDB
+
+	cfg.MailServer = os.Getenv("MAIL_GRPC_SERVER") // Can be empty
 
 	// Version
 	cfg.Version = "1.0.0"
