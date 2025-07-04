@@ -17,6 +17,7 @@ type AuthServiceImpl struct {
 	ports.UserRepository
 	ports.Encryptor
 	ports.TokenManager
+	ports.MailService
 	CtxTimeout time.Duration
 }
 
@@ -56,6 +57,12 @@ func (s *AuthServiceImpl) SignIn(c context.Context, user *entities.User) (*entit
 
 	if err = tx.Commit(); err != nil {
 		logger.WithError(err).Error("Failed to commit transaction")
+		return nil, "", err
+	}
+
+	err = s.MailService.SendSignInNotification(foundUser.Email, "User logged in just now")
+	if err != nil {
+		logger.WithError(err).Error("Failed to send mail")
 		return nil, "", err
 	}
 
