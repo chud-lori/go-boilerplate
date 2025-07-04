@@ -6,11 +6,11 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-type MailService struct {
+type MockMailService struct {
 	mock.Mock
 }
 
-func (_m *MailService) SendSignInNotification(ctx context.Context, email, text string) error {
+func (_m *MockMailService) SendSignInNotification(ctx context.Context, email, text string) error {
 	args := _m.Called(ctx, email, text)
 	return args.Error(0)
 }
