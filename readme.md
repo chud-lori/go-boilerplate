@@ -125,6 +125,16 @@ A modern, production-ready Go boilerplate for building scalable web APIs and mic
 
 ---
 
+### ⚡️ gRPC Mail Server Requirement
+
+> **Note:** This boilerplate includes a gRPC client in the Auth service for sending mail.
+> You must have a compatible gRPC mail server (as defined in [`mail.proto`](mail.proto)) running at `localhost:50051` for full functionality.
+
+- The Auth service will attempt to connect to `localhost:50051` to send mail via gRPC.
+- Please ensure your gRPC mail server is running and implements the service as specified in the provided protobuf definition.
+
+---
+
 ### 🐳 Running with Docker
 
 1. **Create Docker environment file**
