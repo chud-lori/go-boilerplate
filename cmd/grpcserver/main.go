@@ -26,7 +26,7 @@ func (s *mailServer) SendMail(ctx context.Context, req *pb.MailRequest) (*pb.Mai
 	auth := smtp.PlainAuth("", config.Mail.User, config.Mail.Pass, config.Mail.Host)
 
 	smtpAddr := fmt.Sprintf("%s:%d", config.Mail.Host, config.Mail.Port)
-	fmt.Println(smtpAddr)
+
 	msg := []byte(fmt.Sprintf("To: %s\r\nSubject: Testing\r\n\r\n%s", req.Email, req.Message))
 
 	err := smtp.SendMail(smtpAddr, auth, config.Mail.From, []string{req.Email}, msg)

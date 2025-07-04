@@ -2,8 +2,11 @@ package config
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strconv"
+
+	"github.com/joho/godotenv"
 )
 
 type AppConfig struct {
@@ -80,4 +83,34 @@ func LoadConfig() (*AppConfig, error) {
 	cfg.JwtSecret = os.Getenv("JWT_SECRET")
 
 	return cfg, nil
+}
+
+type MailConfig struct {
+	Host string
+	Port int
+	User string
+	Pass string
+	From string
+}
+
+var Mail MailConfig
+
+func LoadMailConfig() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("⚠️ No .env file found or error reading it")
+	}
+
+	port, err := strconv.Atoi(os.Getenv("GRPC_MAIL_PORT"))
+	if err != nil {
+		port = 2525 // default fallback
+	}
+
+	Mail = MailConfig{
+		Host: os.Getenv("GRPC_MAIL_HOST"),
+		Port: port,
+		User: os.Getenv("GRPC_MAIL_USER"),
+		Pass: os.Getenv("GRPC_MAIL_PASS"),
+		From: os.Getenv("GRPC_MAIL_FROM"),
+	}
 }
