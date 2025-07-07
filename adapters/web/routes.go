@@ -3,12 +3,13 @@ package web
 import (
 	"net/http"
 
+	"github.com/chud-lori/go-boilerplate/adapters/controllers"
 	"github.com/chud-lori/go-boilerplate/adapters/middleware"
 	"github.com/chud-lori/go-boilerplate/domain/ports"
 	"github.com/sirupsen/logrus"
 )
 
-func UserRouter(controller ports.UserController, serve *http.ServeMux) {
+func UserRouter(controller *controllers.UserController, serve *http.ServeMux) {
 	serve.HandleFunc("POST /user", controller.Create)
 	serve.HandleFunc("PUT /user/{userId}", controller.Update)
 	serve.HandleFunc("DELETE /user/{userId}", controller.Delete)
@@ -16,12 +17,12 @@ func UserRouter(controller ports.UserController, serve *http.ServeMux) {
 	serve.HandleFunc("GET /user", controller.FindAll)
 }
 
-func AuthRouter(controller ports.AuthController, serve *http.ServeMux) {
+func AuthRouter(controller *controllers.AuthController, serve *http.ServeMux) {
 	serve.HandleFunc("POST /signin", controller.SignIn)
 	serve.HandleFunc("POST /signup", controller.SignUp)
 }
 
-func PostRouter(controller ports.PostController, serve *http.ServeMux, tokenManager ports.TokenManager, logger *logrus.Logger) {
+func PostRouter(controller *controllers.PostController, serve *http.ServeMux, tokenManager ports.TokenManager, logger *logrus.Logger) {
 	createHandler := middleware.JWTMiddleware(http.HandlerFunc(controller.Create), tokenManager, logger)
 	serve.Handle("POST /post", createHandler)
 

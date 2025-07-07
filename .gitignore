@@ -4,3 +4,5 @@
 .env.docker
 
 /bin/
+
+coverage.out
