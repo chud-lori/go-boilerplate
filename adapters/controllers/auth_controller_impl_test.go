@@ -15,6 +15,7 @@ import (
 	"github.com/chud-lori/go-boilerplate/mocks"
 	appErrors "github.com/chud-lori/go-boilerplate/pkg/errors"
 	"github.com/chud-lori/go-boilerplate/pkg/logger"
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -46,7 +47,7 @@ func TestAuthController_SignIn_Success(t *testing.T) {
 
 	// This is the user object you want to be returned by the service
 	returnedUser := &entities.User{
-		Id:        "a3083901-6946-4eed-ba22-37a3edcc5979",
+		ID:        uuid.New(),
 		Email:     "user@mail.com",
 		Password:  "password1234",
 		CreatedAt: time.Date(2023, time.January, 15, 10, 0, 0, 0, time.UTC),
@@ -69,7 +70,7 @@ func TestAuthController_SignIn_Success(t *testing.T) {
 	expectedAuthResponse := dto.AuthResponse{
 		Token: token,
 		User: dto.UserResponse{
-			Id:        returnedUser.Id,
+			Id:        returnedUser.ID.String(),
 			Email:     returnedUser.Email,
 			CreatedAt: returnedUser.CreatedAt,
 		},
@@ -164,7 +165,7 @@ func TestAuthController_SignUp_Success(t *testing.T) {
 
 	// This is the user object you want to be returned by the service
 	returnedUser := &entities.User{
-		Id:        "a3083901-6946-4eed-ba22-37a3edcc5979",
+		ID:        uuid.New(),
 		Email:     "user@mail.com",
 		Password:  "password1234",
 		CreatedAt: time.Date(2023, time.January, 15, 10, 0, 0, 0, time.UTC),
@@ -187,7 +188,7 @@ func TestAuthController_SignUp_Success(t *testing.T) {
 	expectedAuthResponse := dto.AuthResponse{
 		Token: token,
 		User: dto.UserResponse{
-			Id:        returnedUser.Id,
+			Id:        returnedUser.ID.String(),
 			Email:     returnedUser.Email,
 			CreatedAt: returnedUser.CreatedAt,
 		},

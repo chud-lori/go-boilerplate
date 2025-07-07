@@ -11,6 +11,7 @@ import (
 	"github.com/chud-lori/go-boilerplate/domain/ports"
 	appErrors "github.com/chud-lori/go-boilerplate/pkg/errors"
 	"github.com/chud-lori/go-boilerplate/pkg/logger"
+	"github.com/google/uuid"
 
 	"github.com/sirupsen/logrus"
 )
@@ -21,7 +22,7 @@ type UserRepositoryPostgre struct {
 func (repository *UserRepositoryPostgre) Save(ctx context.Context, tx ports.Transaction, user *entities.User) (*entities.User, error) {
 	logger, _ := ctx.Value(logger.LoggerContextKey).(logrus.FieldLogger)
 
-	var id string
+	var id uuid.UUID
 	var createdAt time.Time
 	query := `
             INSERT INTO users (email, password)
@@ -33,7 +34,7 @@ func (repository *UserRepositoryPostgre) Save(ctx context.Context, tx ports.Tran
 		return nil, err
 	}
 
-	user.Id = id
+	user.ID = id
 	user.CreatedAt = createdAt
 
 	return user, nil
@@ -43,7 +44,7 @@ func (repository *UserRepositoryPostgre) Update(ctx context.Context, tx ports.Tr
 	logger, _ := ctx.Value(logger.LoggerContextKey).(logrus.FieldLogger)
 
 	query := "UPDATE users SET email = $1, password = $2 WHERE id = $3"
-	result, err := tx.ExecContext(ctx, query, user.Email, user.Password, user.Id)
+	result, err := tx.ExecContext(ctx, query, user.Email, user.Password, user.ID)
 
 	if err != nil {
 		logger.WithError(err).Error("Error Update")
@@ -57,7 +58,7 @@ func (repository *UserRepositoryPostgre) Update(ctx context.Context, tx ports.Tr
 	}
 
 	if rowsAffected == 0 {
-		logger.Error("User ID %s not found", user.Id)
+		logger.Error("User ID %s not found", user.ID.String())
 		return nil, appErrors.ErrUserNotFound
 	}
 
@@ -89,7 +90,7 @@ func (repository *UserRepositoryPostgre) Delete(ctx context.Context, tx ports.Tr
 func (r *UserRepositoryPostgre) FindById(ctx context.Context, tx ports.Transaction, id string) (*entities.User, error) {
 	user := &entities.User{}
 	query := "SELECT id, email, created_at FROM users WHERE id = $1"
-	err := tx.QueryRowContext(ctx, query, id).Scan(&user.Id, &user.Email, &user.CreatedAt)
+	err := tx.QueryRowContext(ctx, query, id).Scan(&user.ID, &user.Email, &user.CreatedAt)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -104,7 +105,7 @@ func (r *UserRepositoryPostgre) FindById(ctx context.Context, tx ports.Transacti
 func (r *UserRepositoryPostgre) FindByEmail(ctx context.Context, tx ports.Transaction, email string) (*entities.User, error) {
 	user := &entities.User{}
 	query := "SELECT id, password, email, created_at FROM users WHERE email = $1"
-	err := tx.QueryRowContext(ctx, query, email).Scan(&user.Id, &user.Password, &user.Email, &user.CreatedAt)
+	err := tx.QueryRowContext(ctx, query, email).Scan(&user.ID, &user.Password, &user.Email, &user.CreatedAt)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -127,7 +128,7 @@ func (repository *UserRepositoryPostgre) FindAll(ctx context.Context, tx ports.T
 	var users []*entities.User
 	for rows.Next() {
 		var user entities.User
-		err := rows.Scan(&user.Id, &user.Email, &user.CreatedAt)
+		err := rows.Scan(&user.ID, &user.Email, &user.CreatedAt)
 		if err != nil {
 			return nil, err
 		}

@@ -49,7 +49,6 @@ func (controller *UserController) Create(w http.ResponseWriter, r *http.Request)
 	}
 
 	userPayload := &entities.User{
-		Id:    "",
 		Email: userRequest.Email,
 	}
 
@@ -69,7 +68,7 @@ func (controller *UserController) Create(w http.ResponseWriter, r *http.Request)
 		Message: "success save user",
 		Status:  1,
 		Data: dto.UserResponse{
-			Id:        result.Id,
+			Id:        result.ID.String(),
 			Email:     result.Email,
 			CreatedAt: result.CreatedAt,
 		},
@@ -97,7 +96,17 @@ func (controller *UserController) Update(w http.ResponseWriter, r *http.Request)
 	logger := ctx.Value(logger.LoggerContextKey).(*logrus.Entry)
 
 	userRequest := &dto.UserRequest{}
-	userId := r.PathValue("userId")
+	userIdStr := r.PathValue("userId")
+	userId, err := uuid.Parse(userIdStr)
+	if err != nil {
+		logger.Warn("Invalid userId UUID:", userId)
+		helper.WriteResponse(w, dto.WebResponse{
+			Message: "Invalid userId format",
+			Status:  0,
+			Data:    nil,
+		}, http.StatusBadRequest)
+		return
+	}
 
 	if err := helper.GetPayload(r, userRequest); err != nil {
 		logger.Error("Failed to get Payload: ", err)
@@ -110,7 +119,7 @@ func (controller *UserController) Update(w http.ResponseWriter, r *http.Request)
 	}
 
 	userPayload := &entities.User{
-		Id:       userId,
+		ID:       userId,
 		Email:    userRequest.Email,
 		Password: userRequest.Password,
 	}

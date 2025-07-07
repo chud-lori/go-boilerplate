@@ -49,7 +49,7 @@ func (s *AuthServiceImpl) SignIn(c context.Context, user *entities.User) (*entit
 		return nil, "", appErrors.NewUnauthorizedError("Unauthorized", err)
 	}
 
-	token, err := s.TokenManager.GenerateToken(foundUser.Id)
+	token, err := s.TokenManager.GenerateToken(foundUser.ID.String())
 	if err != nil {
 		logger.WithError(err).Error("Failed to generate token")
 		return nil, "", err
@@ -60,10 +60,11 @@ func (s *AuthServiceImpl) SignIn(c context.Context, user *entities.User) (*entit
 		return nil, "", err
 	}
 
-	err = s.MailService.SendSignInNotification(ctx, foundUser.Email, "User logged in just now")
-	if err != nil {
+	// Disable throwing error, as this mail service is optional
+	errMail := s.MailService.SendSignInNotification(ctx, foundUser.Email, "User logged in just now")
+	if errMail != nil {
 		logger.WithError(err).Error("Failed to send mail")
-		return nil, "", err
+		// return nil, "", err
 	}
 
 	return foundUser, token, err
@@ -105,7 +106,7 @@ func (s *AuthServiceImpl) SignUp(c context.Context, user *entities.User) (*entit
 		return nil, "", err
 	}
 
-	token, err := s.TokenManager.GenerateToken(user.Id)
+	token, err := s.TokenManager.GenerateToken(user.ID.String())
 	if err != nil {
 		logger.WithError(err).Error("Failed to generate token")
 		return nil, "", err

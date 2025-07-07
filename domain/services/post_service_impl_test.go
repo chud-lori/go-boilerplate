@@ -39,20 +39,19 @@ func TestPostService_Create_Success(t *testing.T) {
 		CtxTimeout:     2 * time.Second,
 	}
 
-	authorID := uuid.New()
+	user := &entities.User{ID: uuid.New(), Email: "author@example.com"}
 	post := &entities.Post{
-		ID:       uuid.New(),
-		AuthorID: authorID,
-		Title:    "Test Title",
-		Body:     "Test Content",
+		ID:    uuid.New(),
+		User:  user,
+		Title: "Test Title",
+		Body:  "Test Content",
 	}
-	user := &entities.User{Id: authorID.String(), Email: "author@example.com"}
 
 	// Setup mock expectations
 	mockDB.On("BeginTx", mock.Anything).Return(mockTx, nil).Once()
 	mockTx.On("Commit").Return(nil).Once()
 	mockTx.On("Rollback").Return(nil).Maybe() // Rollback might be called on error
-	mockUserRepo.On("FindById", mock.Anything, mockTx, authorID.String()).Return(user, nil).Once()
+	mockUserRepo.On("FindById", mock.Anything, mockTx, user.ID.String()).Return(user, nil).Once()
 	mockPostRepo.On("Save", mock.Anything, mockTx, post).Return(post, nil).Once()
 
 	// Call the service method
@@ -87,11 +86,14 @@ func TestPostService_Create_BeginTxError(t *testing.T) {
 		CtxTimeout:     2 * time.Second,
 	}
 
+	author := &entities.User{
+		ID: uuid.New(),
+	}
 	post := &entities.Post{
-		ID:       uuid.New(),
-		AuthorID: uuid.New(),
-		Title:    "Test Title",
-		Body:     "Test Content",
+		ID:    uuid.New(),
+		User:  author,
+		Title: "Test Title",
+		Body:  "Test Content",
 	}
 
 	// Setup mock expectations for BeginTx error
@@ -128,18 +130,20 @@ func TestPostService_Create_AuthorNotFound(t *testing.T) {
 		CtxTimeout:     2 * time.Second,
 	}
 
-	authorID := uuid.New()
+	author := &entities.User{
+		ID: uuid.New(),
+	}
 	post := &entities.Post{
-		ID:       uuid.New(),
-		AuthorID: authorID,
-		Title:    "Test Title",
-		Body:     "Test Content",
+		ID:    uuid.New(),
+		User:  author,
+		Title: "Test Title",
+		Body:  "Test Content",
 	}
 
 	// Setup mock expectations
 	mockDB.On("BeginTx", mock.Anything).Return(mockTx, nil).Once()
 	mockTx.On("Rollback").Return(nil).Once() // Rollback expected on error
-	mockUserRepo.On("FindById", mock.Anything, mockTx, authorID.String()).Return(nil, appErrors.ErrUserNotFound).Once()
+	mockUserRepo.On("FindById", mock.Anything, mockTx, author.ID.String()).Return(nil, appErrors.ErrUserNotFound).Once()
 
 	// Call the service method
 	result, err := service.Create(ctx, post)
@@ -176,20 +180,19 @@ func TestPostService_Create_SavePostError(t *testing.T) {
 		CtxTimeout:     2 * time.Second,
 	}
 
-	authorID := uuid.New()
+	author := &entities.User{ID: uuid.New(), Email: "author@example.com"}
 	post := &entities.Post{
-		ID:       uuid.New(),
-		AuthorID: authorID,
-		Title:    "Test Title",
-		Body:     "Test Content",
+		ID:    uuid.New(),
+		User:  author,
+		Title: "Test Title",
+		Body:  "Test Content",
 	}
-	user := &entities.User{Id: authorID.String(), Email: "author@example.com"}
 
 	// Setup mock expectations
 	expectedSaveErr := errors.New("database save error")
 	mockDB.On("BeginTx", mock.Anything).Return(mockTx, nil).Once()
 	mockTx.On("Rollback").Return(nil).Once() // Rollback expected on error
-	mockUserRepo.On("FindById", mock.Anything, mockTx, authorID.String()).Return(user, nil).Once()
+	mockUserRepo.On("FindById", mock.Anything, mockTx, post.User.ID.String()).Return(author, nil).Once()
 	mockPostRepo.On("Save", mock.Anything, mockTx, post).Return(nil, expectedSaveErr).Once()
 
 	// Call the service method
@@ -223,21 +226,20 @@ func TestPostService_Create_CommitError(t *testing.T) {
 		CtxTimeout:     2 * time.Second,
 	}
 
-	authorID := uuid.New()
+	author := &entities.User{ID: uuid.New(), Email: "author@example.com"}
 	post := &entities.Post{
-		ID:       uuid.New(),
-		AuthorID: authorID,
-		Title:    "Test Title",
-		Body:     "Test Content",
+		ID:    uuid.New(),
+		User:  author,
+		Title: "Test Title",
+		Body:  "Test Content",
 	}
-	user := &entities.User{Id: authorID.String(), Email: "author@example.com"}
 
 	// Setup mock expectations
 	expectedCommitErr := errors.New("failed to commit transaction")
 	mockDB.On("BeginTx", mock.Anything).Return(mockTx, nil).Once()
 	mockTx.On("Commit").Return(expectedCommitErr).Once()
 	mockTx.On("Rollback").Return(nil).Once() // Rollback expected on commit error
-	mockUserRepo.On("FindById", mock.Anything, mockTx, authorID.String()).Return(user, nil).Once()
+	mockUserRepo.On("FindById", mock.Anything, mockTx, post.User.ID.String()).Return(author, nil).Once()
 	mockPostRepo.On("Save", mock.Anything, mockTx, post).Return(post, nil).Once()
 
 	// Call the service method

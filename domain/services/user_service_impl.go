@@ -94,7 +94,7 @@ func (s *UserServiceImpl) Update(c context.Context, user *entities.User) (*entit
 
 	if err != nil {
 		if errors.Is(err, appErrors.ErrUserNotFound) {
-			logger.Errorf("UserID %d not found", user.Id)
+			logger.Errorf("UserID %s not found", user.ID.String())
 			return nil, appErrors.NewNotFoundError("User not found", err)
 		}
 
