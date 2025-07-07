@@ -338,7 +338,7 @@ func TestUserController_FindById_Success(t *testing.T) {
 		CreatedAt: time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC),
 	}
 
-	mockService.On("FindById", mock.Anything, userId).Return(user, nil)
+	mockService.On("FindById", mock.Anything, userId.String()).Return(user, nil)
 
 	controller.FindById(rec, req)
 	assert.Equal(t, http.StatusOK, rec.Code)
@@ -359,7 +359,7 @@ func TestUserController_FindById_Success(t *testing.T) {
 	assert.True(t, ok, "Expected 'id' field in Data to be a string")
 
 	// 4. Assert the extracted ID
-	assert.Equal(t, userId, actualId, "Expected user ID to match")
+	assert.Equal(t, userId.String(), actualId, "Expected user ID to match")
 
 	mockService.AssertExpectations(t)
 }
@@ -485,7 +485,7 @@ func TestUserController_FindAll_Success(t *testing.T) {
 		// Assert ID of the first user
 		actualId, ok := firstUserMap["id"].(string)
 		assert.True(t, ok, "Expected 'id' field in first user data to be a string")
-		assert.Equal(t, listUsers[0].Id, actualId, "Expected first user ID to match")
+		assert.Equal(t, listUsers[0].ID.String(), actualId, "Expected first user ID to match")
 
 		// Assert Email of the first user
 		actualEmail, ok := firstUserMap["email"].(string)

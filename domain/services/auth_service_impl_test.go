@@ -36,8 +36,9 @@ func TestAuthService_SignIn_Success(t *testing.T) {
 		CtxTimeout:     2 * time.Second,
 	}
 
-	foundUser := &entities.User{ID: uuid.New(), Email: "user@mail.com", Password: "hashpassword"}
-	mockUser := &entities.User{ID: uuid.New(), Email: "user@mail.com", Password: "password1234"}
+	userUUID := uuid.New()
+	foundUser := &entities.User{ID: userUUID, Email: "user@mail.com", Password: "hashpassword"}
+	mockUser := &entities.User{ID: userUUID, Email: "user@mail.com", Password: "password1234"}
 
 	mockDB.On("BeginTx", mock.Anything).Return(mockTx, nil)
 	mockRepo.On("FindByEmail", mock.Anything, mockTx, mockUser.Email).Return(foundUser, nil)
