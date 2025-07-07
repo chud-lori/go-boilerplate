@@ -73,10 +73,14 @@ func (c *PostController) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	user := &entities.User{
+		ID: req.AuthorID,
+	}
+
 	payload := &entities.Post{
-		Title:    req.Title,
-		Body:     req.Body,
-		AuthorID: req.AuthorID,
+		Title: req.Title,
+		Body:  req.Body,
+		User:  user,
 	}
 
 	result, err := c.PostService.Create(ctx, payload)
@@ -107,7 +111,7 @@ func (c *PostController) Create(w http.ResponseWriter, r *http.Request) {
 			ID:        result.ID,
 			Title:     result.Title,
 			Body:      result.Body,
-			AuthorID:  result.AuthorID,
+			AuthorID:  result.User.ID,
 			CreatedAt: result.CreatedAt,
 		},
 	}
@@ -169,10 +173,13 @@ func (c *PostController) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	user := &entities.User{
+		ID: req.AuthorID,
+	}
 	payload := &entities.Post{
-		Title:    req.Title,
-		Body:     req.Body,
-		AuthorID: req.AuthorID,
+		Title: req.Title,
+		Body:  req.Body,
+		User:  user,
 	}
 
 	result, err := c.PostService.Update(ctx, payload)
@@ -203,7 +210,7 @@ func (c *PostController) Update(w http.ResponseWriter, r *http.Request) {
 			ID:        result.ID,
 			Title:     result.Title,
 			Body:      result.Body,
-			AuthorID:  result.AuthorID,
+			AuthorID:  result.User.ID,
 			CreatedAt: result.CreatedAt,
 		},
 	}

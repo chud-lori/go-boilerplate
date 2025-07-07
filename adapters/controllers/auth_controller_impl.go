@@ -67,7 +67,7 @@ func (c *AuthController) SignIn(w http.ResponseWriter, r *http.Request) {
 		Data: dto.AuthResponse{
 			Token: token,
 			User: dto.UserResponse{
-				Id:        user.Id,
+				Id:        user.ID.String(),
 				Email:     user.Email,
 				CreatedAt: user.CreatedAt,
 			},
@@ -171,7 +171,7 @@ func (c *AuthController) SignUp(w http.ResponseWriter, r *http.Request) {
 		Data: dto.AuthResponse{
 			Token: token,
 			User: dto.UserResponse{
-				Id:        user.Id,
+				Id:        user.ID.String(),
 				Email:     user.Email,
 				CreatedAt: user.CreatedAt,
 			},

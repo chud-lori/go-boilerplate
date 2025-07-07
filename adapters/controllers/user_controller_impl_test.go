@@ -16,6 +16,7 @@ import (
 	"github.com/chud-lori/go-boilerplate/mocks"
 	appErrors "github.com/chud-lori/go-boilerplate/pkg/errors"
 	"github.com/chud-lori/go-boilerplate/pkg/logger"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
@@ -42,7 +43,6 @@ func TestUserController_Create_Success(t *testing.T) {
 	req = req.WithContext(ctx)
 
 	user := &entities.User{
-		Id:    "",
 		Email: "user@mail.com",
 	}
 
@@ -79,7 +79,6 @@ func TestUserController_Create_Failed(t *testing.T) {
 	req = req.WithContext(ctx)
 
 	user := &entities.User{
-		Id:    "",
 		Email: "user@mail.com",
 	}
 
@@ -111,17 +110,18 @@ func TestUserController_Update_Success(t *testing.T) {
 		Email:    "user@mail.com",
 		Password: "useruser",
 	}
-	userId := "a234f98c-3239-4c34-8ad8-f63e41bb20c8"
+
+	userId := uuid.New()
 
 	bodyBytes, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPut, "/api/user/"+userId, bytes.NewReader(bodyBytes))
+	req := httptest.NewRequest(http.MethodPut, "/api/user/"+userId.String(), bytes.NewReader(bodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	req.SetPathValue("userId", userId)
+	req.SetPathValue("userId", userId.String())
 	req = req.WithContext(ctx)
 
 	user := &entities.User{
-		Id:       userId,
+		ID:       userId,
 		Email:    "user@mail.com",
 		Password: "useruser",
 	}
@@ -151,17 +151,17 @@ func TestUserController_Update_UserNotFound(t *testing.T) {
 		Email:    "user@mail.com",
 		Password: "useruser",
 	}
-	userId := "a234f98c-3239-4c34-8ad8-f63e41bb20c8"
+	userId := uuid.New()
 
 	bodyBytes, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPut, "/api/user/"+userId, bytes.NewReader(bodyBytes))
+	req := httptest.NewRequest(http.MethodPut, "/api/user/"+userId.String(), bytes.NewReader(bodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	req.SetPathValue("userId", userId)
+	req.SetPathValue("userId", userId.String())
 	req = req.WithContext(ctx)
 
 	user := &entities.User{
-		Id:       userId,
+		ID:       userId,
 		Email:    "user@mail.com",
 		Password: "useruser",
 	}
@@ -194,17 +194,17 @@ func TestUserController_Update_Failed(t *testing.T) {
 		Email:    "user@mail.com",
 		Password: "useruser",
 	}
-	userId := "a234f98c-3239-4c34-8ad8-f63e41bb20c8"
+	userId := uuid.New()
 
 	bodyBytes, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPut, "/api/user/"+userId, bytes.NewReader(bodyBytes))
+	req := httptest.NewRequest(http.MethodPut, "/api/user/"+userId.String(), bytes.NewReader(bodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	req.SetPathValue("userId", userId)
+	req.SetPathValue("userId", userId.String())
 	req = req.WithContext(ctx)
 
 	user := &entities.User{
-		Id:       userId,
+		ID:       userId,
 		Email:    "user@mail.com",
 		Password: "useruser",
 	}
@@ -324,16 +324,16 @@ func TestUserController_FindById_Success(t *testing.T) {
 
 	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
 
-	userId := "a234f98c-3239-4c34-8ad8-f63e41bb20c8"
+	userId := uuid.New()
 
-	req := httptest.NewRequest(http.MethodGet, "/api/user/"+userId, nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/user/"+userId.String(), nil)
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	req.SetPathValue("userId", userId)
+	req.SetPathValue("userId", userId.String())
 	req = req.WithContext(ctx)
 
 	user := &entities.User{
-		Id:        userId,
+		ID:        userId,
 		Email:     "user@mail.com",
 		CreatedAt: time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC),
 	}
@@ -443,13 +443,13 @@ func TestUserController_FindAll_Success(t *testing.T) {
 
 	listUsers := []*entities.User{
 		{
-			Id:        "a234f98c-3239-4c34-8ad8-f63e41bb20c8", // Define userId directly here
+			ID:        uuid.New(),
 			Email:     "user1@mail.com",
 			Password:  "pass1",
 			CreatedAt: time.Date(2023, time.January, 15, 10, 0, 0, 0, time.UTC),
 		},
 		{
-			Id:        "b567g89d-4321-5d67-9fg0-g76h54ij32k1",
+			ID:        uuid.New(),
 			Email:     "user2@mail.com",
 			Password:  "pass2",
 			CreatedAt: time.Date(2023, time.February, 20, 11, 30, 0, 0, time.UTC),
