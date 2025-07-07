@@ -9,6 +9,7 @@ import (
 	"github.com/chud-lori/go-boilerplate/domain/ports"
 	"github.com/chud-lori/go-boilerplate/internal/testutils"
 	appErrors "github.com/chud-lori/go-boilerplate/pkg/errors"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 )
 
@@ -24,7 +25,7 @@ func TestUserRepository_Save(t *testing.T) {
 			}
 			savedUser, err := repo.Save(ctx, tx, user)
 			require.NoError(t, err)
-			require.NotEmpty(t, savedUser.Id)
+			require.NotEmpty(t, savedUser.ID)
 		},
 	)
 }
@@ -40,9 +41,9 @@ func TestUserRepository_FindById(t *testing.T) {
 				Password: "pass123",
 			}
 			savedUser, _ := repo.Save(ctx, tx, user)
-			found, err := repo.FindById(ctx, tx, savedUser.Id)
+			found, err := repo.FindById(ctx, tx, savedUser.ID.String())
 			require.NoError(t, err)
-			require.Equal(t, savedUser.Id, found.Id)
+			require.Equal(t, savedUser.ID, found.ID)
 			require.Equal(t, savedUser.Email, found.Email)
 		},
 	)
@@ -73,7 +74,7 @@ func TestUserRepository_FindByEmail(t *testing.T) {
 			savedUser, _ := repo.Save(ctx, tx, user)
 			found, err := repo.FindByEmail(ctx, tx, savedUser.Email)
 			require.NoError(t, err)
-			require.Equal(t, savedUser.Id, found.Id)
+			require.Equal(t, savedUser.ID, found.ID)
 			require.Equal(t, savedUser.Email, found.Email)
 		},
 	)
@@ -116,7 +117,7 @@ func TestUserRepository_Update_NotFound(t *testing.T) {
 			return &repositories.UserRepositoryPostgre{}, nil
 		},
 		func(ctx context.Context, repo ports.UserRepository, tx ports.Transaction) {
-			nonExistent := &entities.User{Id: "ad24a17d-2925-4aa8-b077-d358a0788df7", Email: "none@example.com", Password: "123"}
+			nonExistent := &entities.User{ID: uuid.New(), Email: "none@example.com", Password: "123"}
 			_, err := repo.Update(ctx, tx, nonExistent)
 			require.ErrorIs(t, err, appErrors.ErrUserNotFound)
 		},
@@ -134,7 +135,7 @@ func TestUserRepository_Delete(t *testing.T) {
 				Password: "pass123",
 			}
 			saved, _ := repo.Save(ctx, tx, user)
-			err := repo.Delete(ctx, tx, saved.Id)
+			err := repo.Delete(ctx, tx, saved.ID.String())
 			require.NoError(t, err)
 		},
 	)

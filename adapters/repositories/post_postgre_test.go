@@ -31,13 +31,15 @@ func TestPostRepository_Save(t *testing.T) {
 			}
 			savedUser, err := userRepo.Save(ctx, tx, testUser)
 			require.NoError(t, err)
-			testUser.Id = savedUser.Id
+			testUser.ID = savedUser.ID
 
-			authorUUID, _ := uuid.Parse(savedUser.Id)
+			author := &entities.User{
+				ID: savedUser.ID,
+			}
 			post := &entities.Post{
-				Title:    "Hello",
-				Body:     "world",
-				AuthorID: authorUUID,
+				Title: "Hello",
+				Body:  "world",
+				User:  author,
 			}
 			savedPost, err := postRepo.Save(ctx, tx, post)
 			require.NoError(t, err)
@@ -59,24 +61,29 @@ func TestPostRepository_Update(t *testing.T) {
 			}
 			savedUser, err := userRepo.Save(ctx, tx, testUser)
 			require.NoError(t, err)
-			testUser.Id = savedUser.Id
+			testUser.ID = savedUser.ID
 
-			authorUUID, _ := uuid.Parse(savedUser.Id)
+			initialAuthor := &entities.User{
+				ID: savedUser.ID,
+			}
 			initialPost := &entities.Post{
-				Title:    "Original Title",
-				Body:     "Original Body",
-				AuthorID: authorUUID,
+				Title: "Original Title",
+				Body:  "Original Body",
+				User:  initialAuthor,
 			}
 			savedPost, err := postRepo.Save(ctx, tx, initialPost)
 			require.NoError(t, err)
 
 			updatedTitle := "Updated Title"
 			updatedBody := "Updated Body Content"
+			authorUpdatePost := &entities.User{
+				ID: savedPost.User.ID,
+			}
 			postToUpdate := &entities.Post{
-				ID:       savedPost.ID,
-				Title:    updatedTitle,
-				Body:     updatedBody,
-				AuthorID: savedPost.AuthorID,
+				ID:    savedPost.ID,
+				Title: updatedTitle,
+				Body:  updatedBody,
+				User:  authorUpdatePost,
 			}
 
 			updatedPost, err := postRepo.Update(ctx, tx, postToUpdate)
@@ -100,11 +107,14 @@ func TestPostRepository_Update_NotFound(t *testing.T) {
 			return &repositories.PostRepositoryPostgre{}, nil
 		},
 		func(ctx context.Context, postRepo ports.PostRepository, tx ports.Transaction) {
+			authorUpdatePost := &entities.User{
+				ID: uuid.New(),
+			}
 			postToUpdate := &entities.Post{
-				ID:       uuid.New(),
-				Title:    "Non Existent",
-				Body:     "Non Existent Body",
-				AuthorID: uuid.New(),
+				ID:    uuid.New(),
+				Title: "Non Existent",
+				Body:  "Non Existent Body",
+				User:  authorUpdatePost,
 			}
 			updatedPost, err := postRepo.Update(ctx, tx, postToUpdate)
 			require.Error(t, err)
@@ -127,13 +137,15 @@ func TestPostRepository_Delete(t *testing.T) {
 			}
 			savedUser, err := userRepo.Save(ctx, tx, testUser)
 			require.NoError(t, err)
-			testUser.Id = savedUser.Id
+			testUser.ID = savedUser.ID
 
-			authorUUID, _ := uuid.Parse(savedUser.Id)
+			author := &entities.User{
+				ID: savedUser.ID,
+			}
 			postToDelete := &entities.Post{
-				Title:    "Post to Delete",
-				Body:     "This post will be deleted.",
-				AuthorID: authorUUID,
+				Title: "Post to Delete",
+				Body:  "This post will be deleted.",
+				User:  author,
 			}
 			savedPost, err := postRepo.Save(ctx, tx, postToDelete)
 			require.NoError(t, err)
@@ -176,13 +188,15 @@ func TestPostRepository_GetById(t *testing.T) {
 			}
 			savedUser, err := userRepo.Save(ctx, tx, testUser)
 			require.NoError(t, err)
-			testUser.Id = savedUser.Id
+			testUser.ID = savedUser.ID
 
-			authorUUID, _ := uuid.Parse(savedUser.Id)
+			author := &entities.User{
+				ID: savedUser.ID,
+			}
 			post := &entities.Post{
-				Title:    "Get Me Post",
-				Body:     "This is the body of the post to get.",
-				AuthorID: authorUUID,
+				Title: "Get Me Post",
+				Body:  "This is the body of the post to get.",
+				User:  author,
 			}
 			savedPost, err := postRepo.Save(ctx, tx, post)
 			require.NoError(t, err)
@@ -193,7 +207,7 @@ func TestPostRepository_GetById(t *testing.T) {
 			require.Equal(t, savedPost.ID, retrievedPost.ID)
 			require.Equal(t, savedPost.Title, retrievedPost.Title)
 			require.Equal(t, savedPost.Body, retrievedPost.Body)
-			require.Equal(t, savedPost.AuthorID, retrievedPost.AuthorID)
+			require.Equal(t, savedPost.User.ID, retrievedPost.User.ID)
 		},
 	)
 }
@@ -226,14 +240,16 @@ func TestPostRepository_GetAll(t *testing.T) {
 			}
 			savedUser, err := userRepo.Save(ctx, tx, testUser)
 			require.NoError(t, err)
-			testUser.Id = savedUser.Id
+			testUser.ID = savedUser.ID
 
-			authorUUID, _ := uuid.Parse(savedUser.Id)
+			author := &entities.User{
+				ID: savedUser.ID,
+			}
 			postsToSave := []*entities.Post{
-				{Title: "Awesome Post A", Body: "Body A", AuthorID: authorUUID, CreatedAt: time.Now().Add(-3 * time.Hour)},
-				{Title: "Fantastic Post B", Body: "Body B", AuthorID: authorUUID, CreatedAt: time.Now().Add(-2 * time.Hour)},
-				{Title: "Great Post C", Body: "Body C", AuthorID: authorUUID, CreatedAt: time.Now().Add(-1 * time.Hour)},
-				{Title: "Search Me Post", Body: "Searchable Content", AuthorID: authorUUID, CreatedAt: time.Now()},
+				{Title: "Awesome Post A", Body: "Body A", User: author, CreatedAt: time.Now().Add(-3 * time.Hour)},
+				{Title: "Fantastic Post B", Body: "Body B", User: author, CreatedAt: time.Now().Add(-2 * time.Hour)},
+				{Title: "Great Post C", Body: "Body C", User: author, CreatedAt: time.Now().Add(-1 * time.Hour)},
+				{Title: "Search Me Post", Body: "Searchable Content", User: author, CreatedAt: time.Now()},
 			}
 			sort.SliceStable(postsToSave, func(i, j int) bool {
 				return postsToSave[i].CreatedAt.After(postsToSave[j].CreatedAt)
