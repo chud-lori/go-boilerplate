@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/chud-lori/go-boilerplate/mocks"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
@@ -34,7 +35,7 @@ func TestUserService_Save_Success(t *testing.T) {
 		CtxTimeout:     2 * time.Second,
 	}
 
-	user := &entities.User{Id: "", Email: "user@mail.com", Password: "password1234"}
+	user := &entities.User{ID: uuid.New(), Email: "user@mail.com", Password: "password1234"}
 
 	mockDB.On("BeginTx", mock.Anything).Return(mockTx, nil)
 	mockEnc.On("HashPassword", user.Password).Return("hashed", nil)
@@ -67,7 +68,7 @@ func TestUserService_Save_Failed(t *testing.T) {
 		CtxTimeout:     2 * time.Second,
 	}
 
-	user := &entities.User{Id: "", Email: "user@mail.com", Password: "password1234"}
+	user := &entities.User{ID: uuid.New(), Email: "user@mail.com", Password: "password1234"}
 
 	mockDB.On("BeginTx", mock.Anything).Return(mockTx, nil)
 	mockEnc.On("HashPassword", user.Password).Return("hashed", nil)
@@ -100,7 +101,7 @@ func TestUserService_Save_FailedCommit(t *testing.T) {
 		CtxTimeout:     2 * time.Second,
 	}
 
-	user := &entities.User{Id: "", Email: "user@mail.com", Password: "password1234"}
+	user := &entities.User{ID: uuid.New(), Email: "user@mail.com", Password: "password1234"}
 
 	mockDB.On("BeginTx", mock.Anything).Return(mockTx, nil)
 	mockEnc.On("HashPassword", user.Password).Return("hashed", nil)
@@ -134,7 +135,7 @@ func TestUserService_Update_Success(t *testing.T) {
 		CtxTimeout:     2 * time.Second,
 	}
 
-	user := &entities.User{Id: "", Email: "user@mail.com", Password: "password1234"}
+	user := &entities.User{ID: uuid.New(), Email: "user@mail.com", Password: "password1234"}
 
 	mockDB.On("BeginTx", mock.Anything).Return(mockTx, nil)
 	mockEnc.On("HashPassword", user.Password).Return("hashed", nil)
@@ -167,7 +168,7 @@ func TestUserService_Update_UserNotFound(t *testing.T) {
 		CtxTimeout:     2 * time.Second,
 	}
 
-	user := &entities.User{Id: "", Email: "user@mail.com", Password: "password1234"}
+	user := &entities.User{ID: uuid.New(), Email: "user@mail.com", Password: "password1234"}
 
 	mockDB.On("BeginTx", mock.Anything).Return(mockTx, nil)
 	mockEnc.On("HashPassword", user.Password).Return("hashed", nil)
@@ -272,14 +273,13 @@ func TestUserService_FindById_Success(t *testing.T) {
 		CtxTimeout:     2 * time.Second,
 	}
 
-	userId := "ad24a17d-2925-4aa8-b077-d358a0788df7"
-	user := &entities.User{Id: userId, Email: "user@mail.com", Password: "password1234"}
+	user := &entities.User{ID: uuid.New(), Email: "user@mail.com", Password: "password1234"}
 
 	mockDB.On("BeginTx", mock.Anything).Return(mockTx, nil)
-	mockRepo.On("FindById", mock.Anything, mockTx, userId).Return(user, nil)
+	mockRepo.On("FindById", mock.Anything, mockTx, user.ID.String()).Return(user, nil)
 	mockTx.On("Commit").Return(nil)
 
-	result, err := service.FindById(ctx, userId)
+	result, err := service.FindById(ctx, user.ID.String())
 
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
@@ -343,13 +343,13 @@ func TestUserService_FindAll_Success(t *testing.T) {
 
 	listUsers := []*entities.User{
 		{
-			Id:        "a234f98c-3239-4c34-8ad8-f63e41bb20c8", // Define userId directly here
+			ID:        uuid.New(),
 			Email:     "user1@mail.com",
 			Password:  "pass1",
 			CreatedAt: time.Date(2023, time.January, 15, 10, 0, 0, 0, time.UTC),
 		},
 		{
-			Id:        "b567g89d-4321-5d67-9fg0-g76h54ij32k1",
+			ID:        uuid.New(),
 			Email:     "user2@mail.com",
 			Password:  "pass2",
 			CreatedAt: time.Date(2023, time.February, 20, 11, 30, 0, 0, time.UTC),
@@ -391,13 +391,13 @@ func TestUserService_FindAll_SuccessCache(t *testing.T) {
 
 	listUsers := []*entities.User{
 		{
-			Id:        "a234f98c-3239-4c34-8ad8-f63e41bb20c8", // Define userId directly here
+			ID:        uuid.New(),
 			Email:     "user1@mail.com",
 			Password:  "pass1",
 			CreatedAt: time.Date(2023, time.January, 15, 10, 0, 0, 0, time.UTC),
 		},
 		{
-			Id:        "b567g89d-4321-5d67-9fg0-g76h54ij32k1",
+			ID:        uuid.New(),
 			Email:     "user2@mail.com",
 			Password:  "pass2",
 			CreatedAt: time.Date(2023, time.February, 20, 11, 30, 0, 0, time.UTC),

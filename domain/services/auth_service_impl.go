@@ -49,7 +49,7 @@ func (s *AuthServiceImpl) SignIn(c context.Context, user *entities.User) (*entit
 		return nil, "", appErrors.NewUnauthorizedError("Unauthorized", err)
 	}
 
-	token, err := s.TokenManager.GenerateToken(foundUser.Id)
+	token, err := s.TokenManager.GenerateToken(foundUser.ID.String())
 	if err != nil {
 		logger.WithError(err).Error("Failed to generate token")
 		return nil, "", err
@@ -105,7 +105,7 @@ func (s *AuthServiceImpl) SignUp(c context.Context, user *entities.User) (*entit
 		return nil, "", err
 	}
 
-	token, err := s.TokenManager.GenerateToken(user.Id)
+	token, err := s.TokenManager.GenerateToken(user.ID.String())
 	if err != nil {
 		logger.WithError(err).Error("Failed to generate token")
 		return nil, "", err

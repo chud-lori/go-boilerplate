@@ -45,7 +45,7 @@ func (s *PostServiceImpl) Create(c context.Context, post *entities.Post) (*entit
 		}
 	}()
 
-	_, err = s.UserRepository.FindById(ctx, tx, post.AuthorID.String())
+	_, err = s.UserRepository.FindById(ctx, tx, post.User.ID.String())
 	if errors.Is(err, appErrors.ErrUserNotFound) {
 		return nil, appErrors.NewNotFoundError("Author not found", err)
 	}

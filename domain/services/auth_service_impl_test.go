@@ -12,6 +12,7 @@ import (
 	"github.com/chud-lori/go-boilerplate/mocks"
 	appErrors "github.com/chud-lori/go-boilerplate/pkg/errors"
 	"github.com/chud-lori/go-boilerplate/pkg/logger"
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -35,13 +36,13 @@ func TestAuthService_SignIn_Success(t *testing.T) {
 		CtxTimeout:     2 * time.Second,
 	}
 
-	foundUser := &entities.User{Id: "a3083901-6946-4eed-ba22-37a3edcc5979", Email: "user@mail.com", Password: "hashpassword"}
-	mockUser := &entities.User{Id: "a3083901-6946-4eed-ba22-37a3edcc5979", Email: "user@mail.com", Password: "password1234"}
+	foundUser := &entities.User{ID: uuid.New(), Email: "user@mail.com", Password: "hashpassword"}
+	mockUser := &entities.User{ID: uuid.New(), Email: "user@mail.com", Password: "password1234"}
 
 	mockDB.On("BeginTx", mock.Anything).Return(mockTx, nil)
 	mockRepo.On("FindByEmail", mock.Anything, mockTx, mockUser.Email).Return(foundUser, nil)
 	mockEnc.On("CompareHash", foundUser.Password, mockUser.Password).Return(nil)
-	mockToken.On("GenerateToken", mockUser.Id).Return("generatedtoken", nil)
+	mockToken.On("GenerateToken", mockUser.ID.String()).Return("generatedtoken", nil)
 	mockTx.On("Commit").Return(nil)
 	mockMailSrv.On("SendSignInNotification", mock.Anything, foundUser.Email, "User logged in just now").Return(nil)
 
@@ -74,7 +75,7 @@ func TestAuthService_SignIn_Failed(t *testing.T) {
 		CtxTimeout:     2 * time.Second,
 	}
 
-	mockUser := &entities.User{Id: "a3083901-6946-4eed-ba22-37a3edcc5979", Email: "user@mail.com", Password: "password1234"}
+	mockUser := &entities.User{ID: uuid.New(), Email: "user@mail.com", Password: "password1234"}
 
 	mockDB.On("BeginTx", mock.Anything).Return(mockTx, nil)
 	mockRepo.On("FindByEmail", mock.Anything, mockTx, mockUser.Email).Return(nil, errors.New("Not found"))
@@ -113,13 +114,13 @@ func TestAuthService_SignUp_Success(t *testing.T) {
 		CtxTimeout:     2 * time.Second,
 	}
 
-	mockUser := &entities.User{Id: "a3083901-6946-4eed-ba22-37a3edcc5979", Email: "user@mail.com", Password: "password1234"}
+	mockUser := &entities.User{ID: uuid.New(), Email: "user@mail.com", Password: "password1234"}
 
 	mockDB.On("BeginTx", mock.Anything).Return(mockTx, nil)
 	mockRepo.On("FindByEmail", mock.Anything, mockTx, mockUser.Email).Return(nil, errors.New("Not found"))
 	mockEnc.On("HashPassword", mockUser.Password).Return("hashpassword", nil)
 	mockRepo.On("Save", mock.Anything, mockTx, mockUser).Return(mockUser, nil)
-	mockToken.On("GenerateToken", mockUser.Id).Return("generatedtoken", nil)
+	mockToken.On("GenerateToken", mockUser.ID.String()).Return("generatedtoken", nil)
 	mockTx.On("Commit").Return(nil)
 
 	_, token, err := service.SignUp(ctx, mockUser)
@@ -150,7 +151,7 @@ func TestAuthService_SignUp_Failed(t *testing.T) {
 		CtxTimeout:     2 * time.Second,
 	}
 
-	mockUser := &entities.User{Id: "a3083901-6946-4eed-ba22-37a3edcc5979", Email: "user@mail.com", Password: "password1234"}
+	mockUser := &entities.User{ID: uuid.New(), Email: "user@mail.com", Password: "password1234"}
 
 	mockDB.On("BeginTx", mock.Anything).Return(mockTx, nil)
 	mockRepo.On("FindByEmail", mock.Anything, mockTx, mockUser.Email).Return(mockUser, nil)
