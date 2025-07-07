@@ -28,7 +28,7 @@ func (r *PostRepositoryPostgre) Save(ctx context.Context, tx ports.Transaction, 
             INSERT INTO posts (title, body, author_id)
             VALUES ($1, $2, $3)
             RETURNING id, title`
-	err := tx.QueryRowContext(ctx, query, post.Title, post.Body, post.AuthorID).Scan(&id, &title)
+	err := tx.QueryRowContext(ctx, query, post.Title, post.Body, post.User.ID).Scan(&id, &title)
 	if err != nil {
 		logger.Error("Failed to post: ", err)
 		return nil, err
@@ -89,8 +89,11 @@ func (r *PostRepositoryPostgre) Delete(ctx context.Context, tx ports.Transaction
 
 func (r *PostRepositoryPostgre) GetById(ctx context.Context, tx ports.Transaction, id uuid.UUID) (*entities.Post, error) {
 	post := &entities.Post{}
-	query := "SELECT id, title, body, author_id, created_at FROM posts WHERE id = $1"
-	err := tx.QueryRowContext(ctx, query, id).Scan(&post.ID, &post.Title, &post.Body, &post.AuthorID, &post.CreatedAt)
+	query := `SELECT p.id, p.title, p.body, p.created_at, u.id, u.email
+	FROM posts p
+	JOIN users u on p.authod_id = u.id
+	WHERE p.id = $1`
+	err := tx.QueryRowContext(ctx, query, id).Scan(&post.ID, &post.Title, &post.Body, &post.CreatedAt, &post.User.ID, &post.User.Email)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -123,7 +126,7 @@ func (r *PostRepositoryPostgre) GetAll(ctx context.Context, tx ports.Transaction
 	var posts []entities.Post
 	for rows.Next() {
 		var post entities.Post
-		err := rows.Scan(&post.ID, &post.Title, &post.Body, &post.AuthorID, &post.CreatedAt)
+		err := rows.Scan(&post.ID, &post.Title, &post.Body, &post.User.ID, &post.CreatedAt)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to scan post row")
 		}
