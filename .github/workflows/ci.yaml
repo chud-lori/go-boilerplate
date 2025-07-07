@@ -28,7 +28,7 @@ jobs:
         # If the go.sum hasn't changed, this will be very fast due to setup-go's caching.
         run: go mod download
 
-      - name: Verify Go module integrity (optional but recommended)
+      - name: Verify Go module integrity
         # Ensures that go.sum matches the downloaded modules.
         # Helps catch issues like corrupted caches or unexpected changes.
         run: go mod verify
@@ -42,9 +42,3 @@ jobs:
       - name: Run Go tests
         # Runs all tests in the project. If `go build` passed, this focuses on test logic.
         run: go test ./... -v -coverprofile=coverage.out -race # -race is highly recommended for concurrency issues
-
-      - name: Upload test coverage report (optional)
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report
-          path: coverage.out
