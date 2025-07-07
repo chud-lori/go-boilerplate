@@ -88,14 +88,19 @@ func (r *PostRepositoryPostgre) Delete(ctx context.Context, tx ports.Transaction
 }
 
 func (r *PostRepositoryPostgre) GetById(ctx context.Context, tx ports.Transaction, id uuid.UUID) (*entities.Post, error) {
-	post := &entities.Post{}
-	query := `SELECT p.id, p.title, p.body, p.created_at, u.id, u.email
+	logger, _ := ctx.Value(logger.LoggerContextKey).(logrus.FieldLogger)
+
+	post := &entities.Post{
+		User: &entities.User{},
+	}
+	query := `SELECT p.id, p.title, p.body, p.created_at, u.id, u.email, u.created_at
 	FROM posts p
-	JOIN users u on p.authod_id = u.id
+	JOIN users u on p.author_id = u.id
 	WHERE p.id = $1`
-	err := tx.QueryRowContext(ctx, query, id).Scan(&post.ID, &post.Title, &post.Body, &post.CreatedAt, &post.User.ID, &post.User.Email)
+	err := tx.QueryRowContext(ctx, query, id).Scan(&post.ID, &post.Title, &post.Body, &post.CreatedAt, &post.User.ID, &post.User.Email, &post.User.CreatedAt)
 
 	if err != nil {
+		logger.WithError(err).Error("Failed GetById Post")
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, appErrors.ErrDataNotFound
 		}
@@ -106,6 +111,8 @@ func (r *PostRepositoryPostgre) GetById(ctx context.Context, tx ports.Transactio
 }
 
 func (r *PostRepositoryPostgre) GetAll(ctx context.Context, tx ports.Transaction, search string, pagination entities.PaginationParams) ([]entities.Post, error) {
+	logger, _ := ctx.Value(logger.LoggerContextKey).(logrus.FieldLogger)
+
 	query := "SELECT id, title, body, author_id, created_at FROM posts WHERE 1=1"
 	args := []interface{}{}
 	argCounter := 1
@@ -120,13 +127,17 @@ func (r *PostRepositoryPostgre) GetAll(ctx context.Context, tx ports.Transaction
 
 	rows, err := tx.QueryContext(ctx, query, args...)
 	if err != nil {
+		logger.WithError(err).Error("Failed query GetAll")
 		return nil, err
 	}
 
 	var posts []entities.Post
 	for rows.Next() {
 		var post entities.Post
+		post.User = &entities.User{}
 		err := rows.Scan(&post.ID, &post.Title, &post.Body, &post.User.ID, &post.CreatedAt)
+
+		logger.WithError(err).Error("Failed query scan GetAll")
 		if err != nil {
 			return nil, fmt.Errorf("Failed to scan post row")
 		}
@@ -134,6 +145,7 @@ func (r *PostRepositoryPostgre) GetAll(ctx context.Context, tx ports.Transaction
 	}
 
 	if err = rows.Err(); err != nil {
+		logger.WithError(err).Error("errors during rows iteration")
 		return nil, fmt.Errorf("errors during rows iteration")
 	}
 
