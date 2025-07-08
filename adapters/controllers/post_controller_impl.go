@@ -215,7 +215,7 @@ func (c *PostController) Update(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	helper.WriteResponse(w, resp, http.StatusCreated)
+	helper.WriteResponse(w, resp, http.StatusOK)
 }
 
 // DeletePost godoc
@@ -275,7 +275,7 @@ func (c *PostController) Delete(w http.ResponseWriter, r *http.Request) {
 		Data:    nil,
 	}
 
-	helper.WriteResponse(w, resp, http.StatusCreated)
+	helper.WriteResponse(w, resp, http.StatusOK)
 }
 
 // GetPostByID godoc
@@ -334,7 +334,7 @@ func (c *PostController) GetById(w http.ResponseWriter, r *http.Request) {
 		Data:    post,
 	}
 
-	helper.WriteResponse(w, resp, http.StatusCreated)
+	helper.WriteResponse(w, resp, http.StatusOK)
 }
 
 // GetAllPosts godoc
@@ -395,5 +395,5 @@ func (c *PostController) GetAll(w http.ResponseWriter, r *http.Request) {
 		Data:    posts,
 	}
 
-	helper.WriteResponse(w, resp, http.StatusCreated)
+	helper.WriteResponse(w, resp, http.StatusOK)
 }
