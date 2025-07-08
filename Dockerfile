@@ -12,33 +12,23 @@ RUN go mod download
 COPY . .
 
 # Overwrite .env with docker env before running anything
+# Consider managing environment variables via Docker Compose directly for better flexibility.
 COPY .env.docker .env
 
-# Install golang-migrate
-# Removed, the migration should not be in build image, move to docker-compose.yml instead
-# RUN curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.1/migrate.linux-amd64.tar.gz \
-#     | tar -xz && mv migrate /usr/local/bin/migrate && chmod +x /usr/local/bin/migrate
+# Build API service binary
+# This assumes your main function for the web service is in cmd/api/main.go
+RUN go build -o bin/api-service ./cmd/api
 
-# Run database migrations
-# RUN make migration-reset
-# RUN make migration-up
-
-# Run tests, REMOVED to avoid error testcontainners
-# pun test on CI pipeline instead
-# RUN make test
-
-# Build final binary
-RUN make build
+# Build gRPC server binary
+# This assumes your main function for the gRPC server is in cmd/grpcserver/main.go
+RUN go build -o bin/grpc-server ./cmd/grpcserver
 
 # Production stage
 FROM alpine:latest
 
 WORKDIR /app
 
-# Just copy the built binary and env file
-ARG BIN_LOC=bin/service-app
-COPY --from=builder /app/${BIN_LOC} ./main
+# Just copy the built binaries and env file
+COPY --from=builder /app/bin/api-service ./api-service
+COPY --from=builder /app/bin/grpc-server ./grpc-server
 COPY --from=builder /app/.env .
-
-# Run the app directly
-CMD ["./main"]

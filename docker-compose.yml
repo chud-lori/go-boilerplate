@@ -66,6 +66,34 @@ services:
     networks:
       - service-network
 
+  service-grpc:
+    container_name: service-grpc
+    build: .
+    labels:
+      logging: "service-promtail"
+      logging_jobname: "service-grpc-log"
+    env_file:
+      - .env.docker
+    ports:
+      - 50051:50051
+    # no need database for grpc server for now
+    # depends_on:
+      # service-postgres:
+      #   condition: service_healthy
+      # service-redis:
+      #   condition: service_healthy
+      # migrate:
+      #   condition: service_completed_successfully
+    networks:
+      - service-network
+    command: ["./grpc-server"]
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 50051 || exit 1"] # Checks if port 50051 is open
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
   service-app:
     container_name: service-app
     build: .
@@ -84,8 +112,11 @@ services:
         condition: service_healthy
       migrate:
         condition: service_completed_successfully
+      service-grpc:
+        condition: service_healthy
     networks:
       - service-network
+    command: ["./api-service"]
 
   service-grafana:
     container_name: service-grafana
