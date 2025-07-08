@@ -30,60 +30,60 @@ A modern, production-ready Go boilerplate for building scalable web APIs and mic
 ## 🗂️ Project Structure
 
 ```
-├── adapters/                  # Interfaces connecting the app to the outside world
-│   ├── controllers/           # HTTP handlers implementing input ports
-│   ├── middleware/            # HTTP middleware (e.g., logging, API key auth)
-│   ├── repositories/          # DB implementation of domain repositories
-│   └── web/                   # Web utilities including DTOs and helpers
-│       ├── dto/               # Request/response DTO structs
-│       ├── helper/            # Helper functions for the web layer
-│       └── routes.go          # HTTP route registration
+├── adapters/                  # Interfaces connecting the app to the outside world
+│   ├── controllers/           # HTTP handlers implementing input ports
+│   ├── middleware/            # HTTP middleware (e.g., logging, API key auth)
+│   ├── repositories/          # DB implementation of domain repositories
+│   └── web/                   # Web utilities including DTOs and helpers
+│       ├── dto/               # Request/response DTO structs
+│       ├── helper/            # Helper functions for the web layer
+│       └── routes.go          # HTTP route registration
 │
-├── cmd/                      # Application entry points
-│   ├── api/                   # Main REST API entry point
-│   └── grpcserver/            # Main gRPC mail server entry point
+├── cmd/                      # Application entry points
+│   ├── api/                   # Main REST API entry point
+│   └── grpcserver/            # Main gRPC mail server entry point
 │
-├── config/                   # Application configuration loading and parsing
+├── config/                   # Application configuration loading and parsing
 │
-├── docs/                     # Swagger documentation (auto-generated)
+├── docs/                     # Swagger documentation (auto-generated)
 │
-├── domain/                   # Core business logic layer (Clean Architecture)
-│   ├── entities/              # Domain entities (e.g., User, Post)
-│   ├── ports/                 # Interfaces for controllers, services, repos, etc.
-│   └── services/              # Application use case implementations
+├── domain/                   # Core business logic layer (Clean Architecture)
+│   ├── entities/              # Domain entities (e.g., User, Post)
+│   ├── ports/                 # Interfaces for controllers, services, repos, etc.
+│   └── services/              # Application use case implementations
 │
-├── infrastructure/           # External infrastructure implementations
-│   ├── cache/                 # Redis cache implementation
-│   ├── datastore/             # PostgreSQL DB setup and connection logic
-│   └── grpc_clients/          # gRPC clients used by the application
+├── infrastructure/           # External infrastructure implementations
+│   ├── cache/                 # Redis cache implementation
+│   ├── datastore/             # PostgreSQL DB setup and connection logic
+│   └── grpc_clients/          # gRPC clients used by the application
 │
-├── internal/                 # Internal packages
-│   ├── testutils/             # Helpers and setup for tests
-│   └── utils/                 # Internal utilities (e.g., graceful shutdown)
+├── internal/                 # Internal packages
+│   ├── testutils/             # Helpers and setup for tests
+│   └── utils/                 # Internal utilities (e.g., graceful shutdown)
 │
-├── migrations/               # SQL migration files for golang-migrate
+├── migrations/               # SQL migration files for golang-migrate
 │
-├── mocks/                    # Mocks for interfaces used in unit tests
+├── mocks/                    # Mocks for interfaces used in unit tests
 │
-├── pkg/                      # Reusable utilities across layers
-│   ├── auth/                  # Encryption, JWT, and passcode helpers
-│   ├── errors/                # Custom error definitions and validation logic
-│   └── logger/                # Logrus setup and logger abstraction
+├── pkg/                      # Reusable utilities across layers
+│   ├── auth/                  # Encryption, JWT, and passcode helpers
+│   ├── errors/                # Custom error definitions and validation logic
+│   └── logger/                # Logrus setup and logger abstraction
 │
-├── proto/                    # Generated protobuf files for gRPC
+├── proto/                    # Generated protobuf files for gRPC
 │
-├── Dockerfile                # Docker build instructions for API service
-├── docker-compose.yml        # Docker Compose for service orchestration
-├── grafana-datasources.yml   # Grafana configuration for Loki
-├── init.sql                  # Optional DB init script for Postgres service
-├── mail.proto                # Protobuf definition for gRPC Mail service
-├── Makefile                  # Developer automation (build, run, test)
-├── promtail.yml              # Promtail config for log shipping to Loki
-├── .env.example              # Example environment variables file
-├── go.mod                    # Go module definition
-├── go.sum                    # Go module checksums
-├── LICENSE                   # License information
-└── readme.md                 # Project documentation (you’re here!)
+├── Dockerfile                # Docker build instructions for API service
+├── docker-compose.yml        # Docker Compose for service orchestration
+├── grafana-datasources.yml   # Grafana configuration for Loki
+├── init.sql                  # Optional DB init script for Postgres service
+├── mail.proto                # Protobuf definition for gRPC Mail service
+├── Makefile                  # Developer automation (build, run, test)
+├── promtail.yml              # Promtail config for log shipping to Loki
+├── .env.example              # Example environment variables file
+├── go.mod                    # Go module definition
+├── go.sum                    # Go module checksums
+├── LICENSE                   # License information
+└── readme.md                 # Project documentation (you’re here!)
 ```
 
 ---
@@ -94,6 +94,7 @@ A modern, production-ready Go boilerplate for building scalable web APIs and mic
 
 - Go 1.23+
 - Docker & Docker Compose
+- **k6**: For running load tests. [Install k6](https://k6.io/docs/getting-started/installation/)
 
 ---
 
@@ -130,8 +131,6 @@ Access at: [http://localhost:8080/docs/index.html](http://localhost:8080/docs/in
 ```sh
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
-
-<!-- Add after "Local Development" or as a new section -->
 
 ---
 
@@ -202,12 +201,30 @@ make test
 
 ---
 
+## 📈 Performance Testing (k6)
+
+This boilerplate includes a k6 script for load testing the REST API endpoints. This helps in understanding the system's performance and stability under various loads.
+
+1.  **Ensure k6 is installed** (see [Prerequisites](#prerequisites)).
+2.  **Make sure the Go API service is running** (e.g., via `make up` or `docker-compose up --build`).
+3.  **Run the k6 script**:
+    ```sh
+    k6 run loadtest.js
+    ```
+    This script simulates a user flow including:
+    * Creating a new post (`POST /api/post`)
+    * Fetching posts twice (`GET /api/post`)
+
+    Adjust the `vus` (Virtual Users) and `duration` in `loadtest.js` to simulate different load scenarios.
+
+---
+
 ## 🔁 Caching (Redis)
 
 - **Redis** is integrated via the `Cache` interface (`domain/ports/cache.go`)
 - **Usage**:
-  - Cache values with `Set`, retrieve with `Get`, delete with `Delete`
-  - Used in services for cache-first logic (e.g., `GetUser()` → check cache → fallback to DB)
+    - Cache values with `Set`, retrieve with `Get`, delete with `Delete`
+    - Used in services for cache-first logic (e.g., `GetAll()` → check cache → fallback to DB)
 - **Implementation**: `infrastructure/cache/redis_cache.go`
 - **Tested via**: [testcontainers-go](https://github.com/testcontainers/testcontainers-go)
 
@@ -217,9 +234,9 @@ make test
 
 - **Structured Logging**: Logrus used for consistent, leveled logs
 - **Grafana + Loki + Promtail** stack:
-  - Access Grafana at: [http://localhost:3000](http://localhost:3000)
-  - Logs shipped by Promtail and stored by Loki
-  - Configured in `promtail.yml` and `grafana-datasources.yml`
+    - Access Grafana at: [http://localhost:3000](http://localhost:3000)
+    - Logs shipped by Promtail and stored by Loki
+    - Configured in `promtail.yml` and `grafana-datasources.yml`
 
 ---
 
