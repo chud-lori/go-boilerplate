@@ -148,6 +148,7 @@ func main() {
 
 	// Auth routes (public)
 	web.AuthRouter(authController, apiRouter)
+
 	// Post routes (public + protected)
 	web.PostRouter(postController, apiRouter, tokenManager, baseLogger)
 
@@ -161,26 +162,6 @@ func main() {
 	apiRouter.Handle("/user", protectedUserHandler)
 	apiRouter.Handle("/user/", protectedUserHandler)
 
-	// postRouter := http.NewServeMux()
-	// web.PostRouter(postController, postRouter)
-	// var protectedPostHandler http.Handler = postRouter
-	// protectedPostHandler = middleware.JWTMiddleware(protectedPostHandler, tokenManager, baseLogger)
-	// apiRouter.Handle("/post", protectedPostHandler)
-	// apiRouter.Handle("/post/", protectedPostHandler)
-
-	// When you add more domains, just add them to apiRouter:
-	// productRouter := http.NewServeMux()
-	// web.ProductRouter(productController, productRouter)
-	// apiRouter.Handle("/product", productRouter)
-	// apiRouter.Handle("/product/", productRouter)
-
-	// orderRouter := http.NewServeMux()
-	// web.OrderRouter(orderController, orderRouter)
-	// var protectedOrderHandler http.Handler = orderRouter
-	// protectedOrderHandler = middleware.JWTMiddleware(protectedOrderHandler, tokenManager, baseLogger)
-	// apiRouter.Handle("/order", protectedOrderHandler)
-	// apiRouter.Handle("/order/", protectedOrderHandler)
-
 	// Single mount point for all API routes
 	router.Handle("/api/", http.StripPrefix("/api", apiRouter))
 
@@ -189,7 +170,6 @@ func main() {
 	var handler http.Handler = router
 	handler = middleware.LogTrafficMiddleware(handler, baseLogger)
 	handler = middleware.APIKeyMiddleware(handler, cfg.APIKey, baseLogger)
-	// handler = middleware.JWTMiddleware(handler, tokenManager, baseLogger)
 
 	// ========== HTTP Server Setup ==========
 
