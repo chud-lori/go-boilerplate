@@ -198,7 +198,7 @@ func TestPostController_Update_Success(t *testing.T) {
 
 	controller.Update(rec, req)
 
-	assert.Equal(t, http.StatusCreated, rec.Code) // Controller returns StatusCreated for success
+	assert.Equal(t, http.StatusOK, rec.Code) // Controller returns StatusCreated for success
 	var response dto.WebResponse
 	err := json.Unmarshal(rec.Body.Bytes(), &response)
 	assert.NoError(t, err)
@@ -273,7 +273,7 @@ func TestPostController_Delete_Success(t *testing.T) {
 
 	controller.Delete(rec, req)
 
-	assert.Equal(t, http.StatusCreated, rec.Code) // Controller returns StatusCreated for success
+	assert.Equal(t, http.StatusOK, rec.Code) // Controller returns StatusCreated for success
 	var response dto.WebResponse
 	err := json.Unmarshal(rec.Body.Bytes(), &response)
 	assert.NoError(t, err)
@@ -375,7 +375,7 @@ func TestPostController_GetById_Success(t *testing.T) {
 
 	controller.GetById(rec, req)
 
-	assert.Equal(t, http.StatusCreated, rec.Code) // Controller returns StatusCreated for success
+	assert.Equal(t, http.StatusOK, rec.Code) // Controller returns StatusCreated for success
 	var response dto.WebResponse
 	err := json.Unmarshal(rec.Body.Bytes(), &response)
 	assert.NoError(t, err)
@@ -480,7 +480,7 @@ func TestPostController_GetAll_Success(t *testing.T) {
 
 	controller.GetAll(rec, req)
 
-	assert.Equal(t, http.StatusCreated, rec.Code) // Controller returns StatusCreated for success
+	assert.Equal(t, http.StatusOK, rec.Code) // Controller returns StatusCreated for success
 	var response dto.WebResponse
 	err := json.Unmarshal(rec.Body.Bytes(), &response)
 	assert.NoError(t, err)
@@ -526,7 +526,7 @@ func TestPostController_GetAll_DefaultQueryParams(t *testing.T) {
 
 	controller.GetAll(rec, req)
 
-	assert.Equal(t, http.StatusCreated, rec.Code)
+	assert.Equal(t, http.StatusOK, rec.Code)
 	var response dto.WebResponse
 	err := json.Unmarshal(rec.Body.Bytes(), &response)
 	assert.NoError(t, err)
