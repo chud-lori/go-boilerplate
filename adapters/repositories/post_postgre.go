@@ -137,7 +137,6 @@ func (r *PostRepositoryPostgre) GetAll(ctx context.Context, tx ports.Transaction
 		post.User = &entities.User{}
 		err := rows.Scan(&post.ID, &post.Title, &post.Body, &post.User.ID, &post.CreatedAt)
 
-		logger.WithError(err).Error("Failed query scan GetAll")
 		if err != nil {
 			return nil, fmt.Errorf("Failed to scan post row")
 		}
