@@ -202,9 +202,10 @@ func (s *PostServiceImpl) GetAll(c context.Context, search string, page, limit i
 	hasher.Write([]byte(queryParams))
 	cacheKey := "posts:" + hex.EncodeToString(hasher.Sum(nil))
 
-	postsCached, err := s.Cache.Get(c, cacheKey)
-	if err = json.Unmarshal([]byte(postsCached), &posts); err == nil {
-		return posts, err
+	// if cached err, won't interupt and using db instead
+	postsCached, errCache := s.Cache.Get(c, cacheKey)
+	if errCache = json.Unmarshal([]byte(postsCached), &posts); errCache == nil {
+		return posts, errCache
 	}
 
 	tx, err := s.DB.BeginTx(ctx)
@@ -233,8 +234,12 @@ func (s *PostServiceImpl) GetAll(c context.Context, search string, page, limit i
 		return nil, err
 	}
 
+	// if cached err, won't interupt
 	postsString, _ := json.Marshal(&posts)
-	s.Cache.Set(c, cacheKey, postsString, 30*time.Second)
+	errCache = s.Cache.Set(c, cacheKey, postsString, 30*time.Second)
+	if errCache != nil {
+		logger.WithError(errCache).Warn("Failed set cache")
+	}
 
 	if err = tx.Commit(); err != nil {
 		logger.WithError(err).Error("Failed to commit transaction")
