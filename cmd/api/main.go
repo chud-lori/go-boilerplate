@@ -170,6 +170,7 @@ func main() {
 	var handler http.Handler = router
 	handler = middleware.LogTrafficMiddleware(handler, baseLogger)
 	handler = middleware.APIKeyMiddleware(handler, cfg.APIKey, baseLogger)
+	handler = middleware.CorsMiddleware(handler)
 
 	// ========== HTTP Server Setup ==========
 
