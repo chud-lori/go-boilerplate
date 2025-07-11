@@ -47,10 +47,11 @@ func TestAuthService_SignIn_Success(t *testing.T) {
 	mockTx.On("Commit").Return(nil)
 	mockMailSrv.On("SendSignInNotification", mock.Anything, foundUser.Email, "User logged in just now").Return(nil)
 
-	_, token, err := service.SignIn(ctx, mockUser)
+	_, token, refreshToken, err := service.SignIn(ctx, mockUser)
 
 	assert.NoError(t, err)
 	assert.Equal(t, "generatedtoken", token)
+	assert.NotEmpty(t, refreshToken)
 
 	mockDB.AssertExpectations(t)
 	mockRepo.AssertExpectations(t)
@@ -82,7 +83,7 @@ func TestAuthService_SignIn_Failed(t *testing.T) {
 	mockRepo.On("FindByEmail", mock.Anything, mockTx, mockUser.Email).Return(nil, errors.New("Not found"))
 	mockTx.On("Rollback").Return(nil)
 
-	user, token, err := service.SignIn(ctx, mockUser)
+	user, token, refreshToken, err := service.SignIn(ctx, mockUser)
 
 	assert.Error(t, err)
 	appErr, ok := err.(*appErrors.AppError)
@@ -91,6 +92,7 @@ func TestAuthService_SignIn_Failed(t *testing.T) {
 	assert.Equal(t, 401, appErr.StatusCode)
 	assert.Nil(t, user)
 	assert.Equal(t, "", token)
+	assert.Equal(t, "", refreshToken)
 
 	mockDB.AssertExpectations(t)
 	mockRepo.AssertExpectations(t)
@@ -124,10 +126,11 @@ func TestAuthService_SignUp_Success(t *testing.T) {
 	mockToken.On("GenerateToken", mockUser.ID.String()).Return("generatedtoken", nil)
 	mockTx.On("Commit").Return(nil)
 
-	_, token, err := service.SignUp(ctx, mockUser)
+	_, token, refreshToken, err := service.SignUp(ctx, mockUser)
 
 	assert.NoError(t, err)
 	assert.Equal(t, "generatedtoken", token)
+	assert.NotEmpty(t, refreshToken)
 
 	mockDB.AssertExpectations(t)
 	mockRepo.AssertExpectations(t)
@@ -158,7 +161,7 @@ func TestAuthService_SignUp_Failed(t *testing.T) {
 	mockRepo.On("FindByEmail", mock.Anything, mockTx, mockUser.Email).Return(mockUser, nil)
 	mockTx.On("Rollback").Return(nil)
 
-	user, token, err := service.SignUp(ctx, mockUser)
+	user, token, refreshToken, err := service.SignUp(ctx, mockUser)
 
 	assert.Error(t, err)
 	appErr, ok := err.(*appErrors.AppError)
@@ -167,6 +170,7 @@ func TestAuthService_SignUp_Failed(t *testing.T) {
 	assert.Equal(t, 400, appErr.StatusCode)
 	assert.Nil(t, user)
 	assert.Equal(t, "", token)
+	assert.Equal(t, "", refreshToken)
 
 	mockDB.AssertExpectations(t)
 	mockRepo.AssertExpectations(t)

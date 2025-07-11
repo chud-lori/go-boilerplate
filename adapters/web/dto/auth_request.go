@@ -10,3 +10,11 @@ type AuthSignUpRequest struct {
 	Password        string `json:"password" validate:"required,max=30,min=8"`
 	ConfirmPassword string `json:"confirm_password" validate:"required,eqfield=Password"`
 }
+
+type RefreshTokenRequest struct {
+	RefreshToken string `json:"refresh_token" validate:"required"`
+}
+
+type LogoutRequest struct {
+	RefreshToken string `json:"refresh_token" validate:"required"`
+}

@@ -282,3 +282,121 @@ func TestAuthController_SignUp_InvalidEmail(t *testing.T) {
 
 	mockService.AssertNotCalled(t, "SignUp")
 }
+
+func TestAuthController_Refresh_Success(t *testing.T) {
+    mockService := new(mocks.MockAuthService)
+    controller := &controllers.AuthController{
+        AuthService: mockService,
+    }
+
+    ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
+
+    reqBody := &dto.RefreshTokenRequest{
+        RefreshToken: "refresh-token-123",
+    }
+    bodyBytes, _ := json.Marshal(reqBody)
+    req := httptest.NewRequest(http.MethodPost, "/api/refresh", bytes.NewReader(bodyBytes))
+    req.Header.Set("Content-Type", "application/json")
+    rec := httptest.NewRecorder()
+    req = req.WithContext(ctx)
+
+    accessToken := "new-access-token"
+    newRefreshToken := "new-refresh-token"
+    mockService.On("RefreshToken", mock.Anything, reqBody.RefreshToken).Return(accessToken, newRefreshToken, nil)
+
+    controller.Refresh(rec, req)
+    assert.Equal(t, http.StatusOK, rec.Code)
+
+    var response dto.WebResponse
+    err := json.Unmarshal(rec.Body.Bytes(), &response)
+    assert.NoError(t, err)
+    assert.Equal(t, "Successfully refreshed tokens", response.Message)
+    assert.Equal(t, 1, response.Status)
+    data := response.Data.(map[string]interface{})
+    assert.Equal(t, accessToken, data["token"])
+    assert.Equal(t, newRefreshToken, data["refresh_token"])
+}
+
+func TestAuthController_Refresh_InvalidToken(t *testing.T) {
+    mockService := new(mocks.MockAuthService)
+    controller := &controllers.AuthController{
+        AuthService: mockService,
+    }
+
+    ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
+
+    reqBody := &dto.RefreshTokenRequest{
+        RefreshToken: "invalid-refresh-token",
+    }
+    bodyBytes, _ := json.Marshal(reqBody)
+    req := httptest.NewRequest(http.MethodPost, "/api/refresh", bytes.NewReader(bodyBytes))
+    req.Header.Set("Content-Type", "application/json")
+    rec := httptest.NewRecorder()
+    req = req.WithContext(ctx)
+
+    mockService.On("RefreshToken", mock.Anything, reqBody.RefreshToken).Return("", "", appErrors.NewUnauthorizedError("Invalid or expired refresh token", nil))
+
+    controller.Refresh(rec, req)
+    assert.Equal(t, http.StatusBadRequest, rec.Code)
+    var response dto.WebResponse
+    err := json.Unmarshal(rec.Body.Bytes(), &response)
+    assert.NoError(t, err)
+    assert.Equal(t, "Invalid or expired refresh token", response.Message)
+    assert.Equal(t, 0, response.Status)
+}
+
+func TestAuthController_Logout_Success(t *testing.T) {
+    mockService := new(mocks.MockAuthService)
+    controller := &controllers.AuthController{
+        AuthService: mockService,
+    }
+
+    ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
+
+    reqBody := &dto.LogoutRequest{
+        RefreshToken: "refresh-token-logout",
+    }
+    bodyBytes, _ := json.Marshal(reqBody)
+    req := httptest.NewRequest(http.MethodPost, "/api/logout", bytes.NewReader(bodyBytes))
+    req.Header.Set("Content-Type", "application/json")
+    rec := httptest.NewRecorder()
+    req = req.WithContext(ctx)
+
+    mockService.On("Logout", mock.Anything, reqBody.RefreshToken).Return(nil)
+
+    controller.Logout(rec, req)
+    assert.Equal(t, http.StatusOK, rec.Code)
+    var response dto.WebResponse
+    err := json.Unmarshal(rec.Body.Bytes(), &response)
+    assert.NoError(t, err)
+    assert.Equal(t, "Successfully logged out", response.Message)
+    assert.Equal(t, 1, response.Status)
+}
+
+func TestAuthController_Logout_InvalidToken(t *testing.T) {
+    mockService := new(mocks.MockAuthService)
+    controller := &controllers.AuthController{
+        AuthService: mockService,
+    }
+
+    ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
+
+    reqBody := &dto.LogoutRequest{
+        RefreshToken: "invalid-refresh-token",
+    }
+    bodyBytes, _ := json.Marshal(reqBody)
+    req := httptest.NewRequest(http.MethodPost, "/api/logout", bytes.NewReader(bodyBytes))
+    req.Header.Set("Content-Type", "application/json")
+    rec := httptest.NewRecorder()
+    req = req.WithContext(ctx)
+
+    mockService.On("Logout", mock.Anything, reqBody.RefreshToken).Return(appErrors.NewUnauthorizedError("Invalid or expired refresh token", nil))
+
+    controller.Logout(rec, req)
+    assert.Equal(t, http.StatusBadRequest, rec.Code)
+    var response dto.WebResponse
+    err := json.Unmarshal(rec.Body.Bytes(), &response)
+    assert.NoError(t, err)
+    assert.Equal(t, "Invalid or expired refresh token", response.Message)
+    assert.Equal(t, 0, response.Status)
+}

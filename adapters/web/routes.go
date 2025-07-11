@@ -20,6 +20,8 @@ func UserRouter(controller *controllers.UserController, serve *http.ServeMux) {
 func AuthRouter(controller *controllers.AuthController, serve *http.ServeMux) {
 	serve.HandleFunc("POST /signin", controller.SignIn)
 	serve.HandleFunc("POST /signup", controller.SignUp)
+	serve.HandleFunc("POST /refresh", controller.Refresh)
+	serve.HandleFunc("POST /logout", controller.Logout)
 }
 
 func PostRouter(controller *controllers.PostController, serve *http.ServeMux, tokenManager ports.TokenManager, logger *logrus.Logger) {

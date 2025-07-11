@@ -102,6 +102,7 @@ func main() {
 		MailService:    mailService,
 		Encryptor:      encryptor,
 		TokenManager:   tokenManager,
+		Cache:          cache, // Inject cache for refresh tokens
 		CtxTimeout:     ctxTimeout,
 	}
 
