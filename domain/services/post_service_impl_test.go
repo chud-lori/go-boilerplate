@@ -1115,3 +1115,243 @@ func TestPostService_GetAll_CacheSetError(t *testing.T) {
 	mockPostRepo.AssertExpectations(t)
 	mockTx.AssertExpectations(t)
 }
+
+func TestPostService_GetAllPaginated_Success(t *testing.T) {
+	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
+	mockDB := new(mocks.MockDatabase)
+	mockPostRepo := new(mocks.MockPostRepository)
+	mockUserRepo := new(mocks.MockUserRepository)
+	mockCache := new(mocks.MockCache)
+	mockTx := new(mocks.MockTransaction)
+
+	service := &services.PostServiceImpl{
+		DB:             mockDB,
+		PostRepository: mockPostRepo,
+		UserRepository: mockUserRepo,
+		Cache:          mockCache,
+		CtxTimeout:     2 * time.Second,
+	}
+
+	search := "keyword"
+	page := 2
+	limit := 5
+	expectedPosts := []entities.Post{
+		{ID: uuid.New(), Title: "Post 1"},
+		{ID: uuid.New(), Title: "Post 2"},
+	}
+	totalItems := 12
+
+	// Mock cache miss
+	queryParams := fmt.Sprintf("search=%s:page=%d:limit=%d", search, page, limit)
+	hasher := sha256.New()
+	hasher.Write([]byte(queryParams))
+	cacheKey := "posts:paginated:" + hex.EncodeToString(hasher.Sum(nil))
+	mockCache.On("Get", mock.Anything, cacheKey).Return("", errors.New("cache miss")).Once()
+
+	mockDB.On("BeginTx", mock.Anything).Return(mockTx, nil).Once()
+	mockTx.On("Commit").Return(nil).Once()
+	mockTx.On("Rollback").Return(nil).Maybe()
+	mockPostRepo.On("CountPost", mock.Anything, mockTx).Return(uint32(totalItems), nil).Once()
+	mockPostRepo.On("GetAll", mock.Anything, mockTx, search, entities.PaginationParams{Page: page, Limit: limit}).Return(expectedPosts, nil).Once()
+	mockCache.On("Set", mock.Anything, cacheKey, mock.AnythingOfType("[]uint8"), 30*time.Second).Return(nil).Once()
+
+	posts, total, err := service.GetAllPaginated(ctx, search, page, limit)
+
+	assert.NoError(t, err)
+	assert.Equal(t, expectedPosts, posts)
+	assert.Equal(t, totalItems, total)
+
+	mockCache.AssertExpectations(t)
+	mockDB.AssertExpectations(t)
+	mockPostRepo.AssertExpectations(t)
+	mockTx.AssertExpectations(t)
+}
+
+func TestPostService_GetAllPaginated_RepoError(t *testing.T) {
+	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
+	mockDB := new(mocks.MockDatabase)
+	mockPostRepo := new(mocks.MockPostRepository)
+	mockUserRepo := new(mocks.MockUserRepository)
+	mockCache := new(mocks.MockCache)
+	mockTx := new(mocks.MockTransaction)
+
+	service := &services.PostServiceImpl{
+		DB:             mockDB,
+		PostRepository: mockPostRepo,
+		UserRepository: mockUserRepo,
+		Cache:          mockCache,
+		CtxTimeout:     2 * time.Second,
+	}
+
+	search := "keyword"
+	page := 1
+	limit := 10
+	totalItems := 10
+
+	// Mock cache miss
+	queryParams := fmt.Sprintf("search=%s:page=%d:limit=%d", search, page, limit)
+	hasher := sha256.New()
+	hasher.Write([]byte(queryParams))
+	cacheKey := "posts:paginated:" + hex.EncodeToString(hasher.Sum(nil))
+	mockCache.On("Get", mock.Anything, cacheKey).Return("", errors.New("cache miss")).Once()
+
+	mockDB.On("BeginTx", mock.Anything).Return(mockTx, nil).Once()
+	mockTx.On("Rollback").Return(nil).Once()
+	mockPostRepo.On("CountPost", mock.Anything, mockTx).Return(uint32(totalItems), nil).Once()
+	repoErr := errors.New("repo error")
+	mockPostRepo.On("GetAll", mock.Anything, mockTx, search, entities.PaginationParams{Page: page, Limit: limit}).Return(nil, repoErr).Once()
+
+	posts, total, err := service.GetAllPaginated(ctx, search, page, limit)
+
+	assert.Error(t, err)
+	assert.Nil(t, posts)
+	assert.Equal(t, 0, total)
+	assert.Equal(t, repoErr, err)
+
+	mockCache.AssertExpectations(t)
+	mockDB.AssertExpectations(t)
+	mockPostRepo.AssertExpectations(t)
+	mockTx.AssertExpectations(t)
+}
+
+func TestPostService_GetAllPaginated_CountError(t *testing.T) {
+	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
+	mockDB := new(mocks.MockDatabase)
+	mockPostRepo := new(mocks.MockPostRepository)
+	mockUserRepo := new(mocks.MockUserRepository)
+	mockCache := new(mocks.MockCache)
+	mockTx := new(mocks.MockTransaction)
+
+	service := &services.PostServiceImpl{
+		DB:             mockDB,
+		PostRepository: mockPostRepo,
+		UserRepository: mockUserRepo,
+		Cache:          mockCache,
+		CtxTimeout:     2 * time.Second,
+	}
+
+	search := "keyword"
+	page := 1
+	limit := 10
+
+	// Mock cache miss
+	queryParams := fmt.Sprintf("search=%s:page=%d:limit=%d", search, page, limit)
+	hasher := sha256.New()
+	hasher.Write([]byte(queryParams))
+	cacheKey := "posts:paginated:" + hex.EncodeToString(hasher.Sum(nil))
+	mockCache.On("Get", mock.Anything, cacheKey).Return("", errors.New("cache miss")).Once()
+
+	mockDB.On("BeginTx", mock.Anything).Return(mockTx, nil).Once()
+	mockTx.On("Rollback").Return(nil).Once()
+	countErr := errors.New("count error")
+	mockPostRepo.On("CountPost", mock.Anything, mockTx).Return(uint32(0), countErr).Once()
+
+	posts, total, err := service.GetAllPaginated(ctx, search, page, limit)
+
+	assert.Error(t, err)
+	assert.Nil(t, posts)
+	assert.Equal(t, 0, total)
+	assert.Equal(t, countErr, err)
+
+	mockCache.AssertExpectations(t)
+	mockDB.AssertExpectations(t)
+	mockPostRepo.AssertExpectations(t)
+	mockTx.AssertExpectations(t)
+}
+
+func TestPostService_GetAllPaginated_CacheHit(t *testing.T) {
+	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
+	mockDB := new(mocks.MockDatabase)
+	mockPostRepo := new(mocks.MockPostRepository)
+	mockUserRepo := new(mocks.MockUserRepository)
+	mockCache := new(mocks.MockCache)
+
+	service := &services.PostServiceImpl{
+		DB:             mockDB,
+		PostRepository: mockPostRepo,
+		UserRepository: mockUserRepo,
+		Cache:          mockCache,
+		CtxTimeout:     2 * time.Second,
+	}
+
+	search := "keyword"
+	page := 1
+	limit := 10
+	expectedPosts := []entities.Post{
+		{ID: uuid.New(), Title: "Post 1"},
+		{ID: uuid.New(), Title: "Post 2"},
+	}
+	totalItems := 2
+	cacheData := entities.PaginatedPostsCache{Posts: expectedPosts, TotalItems: totalItems}
+	cacheJSON, _ := json.Marshal(cacheData)
+
+	queryParams := fmt.Sprintf("search=%s:page=%d:limit=%d", search, page, limit)
+	hasher := sha256.New()
+	hasher.Write([]byte(queryParams))
+	cacheKey := "posts:paginated:" + hex.EncodeToString(hasher.Sum(nil))
+
+	mockCache.On("Get", mock.Anything, cacheKey).Return(string(cacheJSON), nil).Once()
+
+	posts, total, err := service.GetAllPaginated(ctx, search, page, limit)
+
+	assert.NoError(t, err)
+	assert.Equal(t, expectedPosts, posts)
+	assert.Equal(t, totalItems, total)
+
+	mockCache.AssertExpectations(t)
+	mockDB.AssertNotCalled(t, "BeginTx")
+	mockPostRepo.AssertNotCalled(t, "GetAll")
+}
+
+func TestPostService_GetAllPaginated_CacheMiss_DBSucceeds(t *testing.T) {
+	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
+	mockDB := new(mocks.MockDatabase)
+	mockPostRepo := new(mocks.MockPostRepository)
+	mockUserRepo := new(mocks.MockUserRepository)
+	mockCache := new(mocks.MockCache)
+	mockTx := new(mocks.MockTransaction)
+
+	service := &services.PostServiceImpl{
+		DB:             mockDB,
+		PostRepository: mockPostRepo,
+		UserRepository: mockUserRepo,
+		Cache:          mockCache,
+		CtxTimeout:     2 * time.Second,
+	}
+
+	search := "keyword"
+	page := 1
+	limit := 10
+	expectedPosts := []entities.Post{
+		{ID: uuid.New(), Title: "Post 1"},
+		{ID: uuid.New(), Title: "Post 2"},
+	}
+	totalItems := 2
+	// cacheJSON, _ := json.Marshal(cacheData) // Remove this unused variable in cache miss test
+
+	queryParams := fmt.Sprintf("search=%s:page=%d:limit=%d", search, page, limit)
+	hasher := sha256.New()
+	hasher.Write([]byte(queryParams))
+	cacheKey := "posts:paginated:" + hex.EncodeToString(hasher.Sum(nil))
+
+	// Simulate cache miss
+	mockCache.On("Get", mock.Anything, cacheKey).Return("", errors.New("cache miss")).Once()
+	// DB operations
+	mockDB.On("BeginTx", mock.Anything).Return(mockTx, nil).Once()
+	mockTx.On("Commit").Return(nil).Once()
+	mockTx.On("Rollback").Return(nil).Maybe()
+	mockPostRepo.On("CountPost", mock.Anything, mockTx).Return(uint32(totalItems), nil).Once()
+	mockPostRepo.On("GetAll", mock.Anything, mockTx, search, entities.PaginationParams{Page: page, Limit: limit}).Return(expectedPosts, nil).Once()
+	mockCache.On("Set", mock.Anything, cacheKey, mock.AnythingOfType("[]uint8"), 30*time.Second).Return(nil).Once()
+
+	posts, total, err := service.GetAllPaginated(ctx, search, page, limit)
+
+	assert.NoError(t, err)
+	assert.Equal(t, expectedPosts, posts)
+	assert.Equal(t, totalItems, total)
+
+	mockCache.AssertExpectations(t)
+	mockDB.AssertExpectations(t)
+	mockPostRepo.AssertExpectations(t)
+	mockTx.AssertExpectations(t)
+}
