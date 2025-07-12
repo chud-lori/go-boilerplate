@@ -2,6 +2,7 @@ package grpc_clients
 
 import (
 	"context"
+	"time"
 
 	"github.com/chud-lori/go-boilerplate/domain/ports"
 	"github.com/chud-lori/go-boilerplate/pkg/logger"
@@ -12,40 +13,35 @@ import (
 	"google.golang.org/grpc"
 )
 
-// var apiMailBreaker *gobreaker.CircuitBreaker
-var grpcMailBreaker *gobreaker.CircuitBreaker[[]byte]
+type GrpcMailClient struct {
+	Conn    grpc.ClientConnInterface
+	Breaker *gobreaker.CircuitBreaker[[]byte]
+}
 
-func init() {
+func defaultBreaker() *gobreaker.CircuitBreaker[[]byte] {
 	var st gobreaker.Settings
 	st.Name = "GrpcMailClient"
 	st.MaxRequests = 3
-	st.Interval = 60 * 1e9
-	st.Timeout = 10 * 1e9
-	// apiMailBreaker = gobreaker.NewCircuitBreaker(gobreaker.Settings{
-	// 	Name:        "ApiMailClient",
-	// 	MaxRequests: 3,
-	// 	Interval:    60 * time.Second,
-	// 	Timeout:     10 * time.Second,
-	// })
-	grpcMailBreaker = gobreaker.NewCircuitBreaker[[]byte](st)
-}
-
-type GrpcMailClient struct {
-	conn grpc.ClientConnInterface
+	st.Interval = 60 * time.Second
+	st.Timeout = 10 * time.Second
+	return gobreaker.NewCircuitBreaker[[]byte](st)
 }
 
 var _ ports.MailClient = (*GrpcMailClient)(nil)
 
 func NewGrpcMailClient(conn grpc.ClientConnInterface) *GrpcMailClient {
-	return &GrpcMailClient{conn: conn}
+	return &GrpcMailClient{
+		Conn:    conn,
+		Breaker: defaultBreaker(),
+	}
 }
 
 func (g *GrpcMailClient) SendMail(ctx context.Context, email string, message string) error {
-	c := pb.NewMailClient(g.conn)
+	c := pb.NewMailClient(g.Conn)
 
 	logger, _ := ctx.Value(logger.LoggerContextKey).(logrus.FieldLogger)
 
-	_, err := grpcMailBreaker.Execute(func() ([]byte, error) {
+	_, err := g.Breaker.Execute(func() ([]byte, error) {
 		r, err := c.SendMail(ctx, &pb.MailRequest{Email: email, Message: message})
 		if err != nil {
 			logger.WithError(err).Error("could not send mail")
