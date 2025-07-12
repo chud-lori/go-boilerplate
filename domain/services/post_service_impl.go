@@ -248,3 +248,67 @@ func (s *PostServiceImpl) GetAll(c context.Context, search string, page, limit i
 
 	return posts, nil
 }
+
+func (s *PostServiceImpl) GetAllPaginated(c context.Context, search string, page, limit int) ([]entities.Post, int, error) {
+	logger, _ := c.Value(logger.LoggerContextKey).(logrus.FieldLogger)
+	ctx, cancel := context.WithTimeout(c, s.CtxTimeout)
+	defer cancel()
+
+	// cache key based on payload
+	queryParams := fmt.Sprintf("search=%s:page=%d:limit=%d", search, page, limit)
+	hasher := sha256.New()
+	hasher.Write([]byte(queryParams))
+	cacheKey := "posts:paginated:" + hex.EncodeToString(hasher.Sum(nil))
+
+	// Try cache first
+	var cacheData entities.PaginatedPostsCache
+	cached, errCache := s.Cache.Get(c, cacheKey)
+	if errCache = json.Unmarshal([]byte(cached), &cacheData); errCache == nil {
+		return cacheData.Posts, cacheData.TotalItems, nil
+	}
+
+	tx, err := s.DB.BeginTx(ctx)
+	if err != nil {
+		logger.WithError(err).Error("Failed to begin transaction")
+		return nil, 0, err
+	}
+
+	defer func() {
+		if r := recover(); r != nil || err != nil {
+			logger.Errorf("Transaction rollback due to error: %v", err)
+			logger.Errorf("Transaction rollback due to panic: %v", r)
+			tx.Rollback()
+		}
+	}()
+
+	// Get total count first
+	totalItems, err := s.PostRepository.CountPost(ctx, tx)
+	if err != nil {
+		logger.WithError(err).Error("Failed to count posts")
+		return nil, 0, err
+	}
+
+	// Get paginated posts
+	pagination := entities.PaginationParams{
+		Page:  page,
+		Limit: limit,
+	}
+
+	posts, err := s.PostRepository.GetAll(ctx, tx, search, pagination)
+	if err != nil {
+		logger.WithError(err).Error("Failed to get all posts")
+		return nil, 0, err
+	}
+
+	// Cache the result
+	cacheData = entities.PaginatedPostsCache{Posts: posts, TotalItems: int(totalItems)}
+	cacheBytes, _ := json.Marshal(&cacheData)
+	_ = s.Cache.Set(c, cacheKey, cacheBytes, 30*time.Second)
+
+	if err = tx.Commit(); err != nil {
+		logger.WithError(err).Error("Failed to commit transaction")
+		return nil, 0, err
+	}
+
+	return posts, int(totalItems), nil
+}
