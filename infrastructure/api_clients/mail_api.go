@@ -11,7 +11,7 @@ import (
 	"github.com/chud-lori/go-boilerplate/domain/ports"
 	"github.com/chud-lori/go-boilerplate/pkg/logger"
 	"github.com/sirupsen/logrus"
-	"github.com/sony/gobreaker"
+	"github.com/sony/gobreaker/v2"
 )
 
 type ApiMailClient struct {
@@ -19,15 +19,16 @@ type ApiMailClient struct {
 	Client   *http.Client
 }
 
-var apiMailBreaker *gobreaker.CircuitBreaker
+// var apiMailBreaker *gobreaker.CircuitBreaker
+var apiMailBreaker *gobreaker.CircuitBreaker[[]byte]
 
 func init() {
-	apiMailBreaker = gobreaker.NewCircuitBreaker(gobreaker.Settings{
-		Name:        "ApiMailClient",
-		MaxRequests: 3,
-		Interval:    60 * time.Second,
-		Timeout:     10 * time.Second,
-	})
+	var st gobreaker.Settings
+	st.Name = "ApiMailClient"
+	st.MaxRequests = 3
+	st.Interval = 60 * time.Second
+	st.Timeout = 10 * time.Second
+	apiMailBreaker = gobreaker.NewCircuitBreaker[[]byte](st)
 }
 
 var _ ports.MailClient = (*ApiMailClient)(nil)
@@ -46,7 +47,8 @@ type mailRequest struct {
 
 func (a *ApiMailClient) SendMail(ctx context.Context, email string, message string) error {
 	logger, _ := ctx.Value(logger.LoggerContextKey).(logrus.FieldLogger)
-	_, err := apiMailBreaker.Execute(func() (interface{}, error) {
+
+	_, err := apiMailBreaker.Execute(func() ([]byte, error) {
 		payload := mailRequest{Email: email, Message: message}
 		body, _ := json.Marshal(payload)
 		req, err := http.NewRequestWithContext(ctx, "POST", a.Endpoint, bytes.NewBuffer(body))
@@ -67,5 +69,6 @@ func (a *ApiMailClient) SendMail(ctx context.Context, email string, message stri
 		logger.Infof("API mail sent to %s", email)
 		return nil, nil
 	})
+
 	return err
-} 
+}
