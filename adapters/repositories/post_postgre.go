@@ -87,6 +87,22 @@ func (r *PostRepositoryPostgre) Delete(ctx context.Context, tx ports.Transaction
 	return nil
 }
 
+func (r *PostRepositoryPostgre) CountPost(ctx context.Context, tx ports.Transaction) (uint32, error) {
+	logger, _ := ctx.Value(logger.LoggerContextKey).(logrus.FieldLogger)
+
+	var total uint32
+
+	query := "SELECT count(id) FROM posts"
+	err := tx.QueryRowContext(ctx, query).Scan(&total)
+
+	if err != nil {
+		logger.WithError(err).Error("Failed query count")
+		return 0, err
+	}
+
+	return total, nil
+}
+
 func (r *PostRepositoryPostgre) GetById(ctx context.Context, tx ports.Transaction, id uuid.UUID) (*entities.Post, error) {
 	logger, _ := ctx.Value(logger.LoggerContextKey).(logrus.FieldLogger)
 
