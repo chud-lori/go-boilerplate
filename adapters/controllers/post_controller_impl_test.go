@@ -476,29 +476,27 @@ func TestPostController_GetAll_Success(t *testing.T) {
 	req = req.WithContext(ctx)
 	rec := httptest.NewRecorder()
 
-	mockService.On("GetAll", mock.Anything, "test", 2, 5).Return(expectedPosts, nil).Once()
+	mockService.On("GetAllPaginated", mock.Anything, "test", 2, 5).Return(expectedPosts, 2, nil).Once()
 
 	controller.GetAll(rec, req)
 
-	assert.Equal(t, http.StatusOK, rec.Code) // Controller returns StatusCreated for success
-	var response dto.WebResponse
+	assert.Equal(t, http.StatusOK, rec.Code)
+	var response dto.PaginatedWebResponse
 	err := json.Unmarshal(rec.Body.Bytes(), &response)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "Successfully Get posts", response.Message)
 	assert.Equal(t, 1, response.Status)
 	assert.NotNil(t, response.Data)
+	assert.Len(t, response.Data, len(expectedPosts))
 
-	// Unmarshal Data to []dto.PostResponse or []map[string]interface{} for assertion
-	postsData, ok := response.Data.([]interface{})
-	assert.True(t, ok)
-	assert.Len(t, postsData, len(expectedPosts))
-
-	// You might want to do more granular assertions on individual post fields
-	// For example:
-	post1 := postsData[0].(map[string]interface{})
-	assert.Equal(t, expectedPosts[0].ID.String(), post1["id"])
-	assert.Equal(t, expectedPosts[0].Title, post1["title"])
+	// Check pagination metadata
+	assert.Equal(t, 2, response.Pagination.CurrentPage)
+	assert.Equal(t, 5, response.Pagination.PageSize)
+	assert.Equal(t, 2, response.Pagination.TotalItems)
+	assert.Equal(t, 1, response.Pagination.TotalPages)
+	assert.Equal(t, false, response.Pagination.HasNext)
+	assert.Equal(t, true, response.Pagination.HasPrev)
 
 	mockService.AssertExpectations(t)
 }
@@ -522,12 +520,12 @@ func TestPostController_GetAll_DefaultQueryParams(t *testing.T) {
 	req = req.WithContext(ctx)
 	rec := httptest.NewRecorder()
 
-	mockService.On("GetAll", mock.Anything, "", 1, 10).Return(expectedPosts, nil).Once() // Expect defaults
+	mockService.On("GetAllPaginated", mock.Anything, "", 1, 10).Return(expectedPosts, 1, nil).Once() // Expect defaults
 
 	controller.GetAll(rec, req)
 
 	assert.Equal(t, http.StatusOK, rec.Code)
-	var response dto.WebResponse
+	var response dto.PaginatedWebResponse
 	err := json.Unmarshal(rec.Body.Bytes(), &response)
 	assert.NoError(t, err)
 
@@ -551,7 +549,7 @@ func TestPostController_GetAll_ServiceError(t *testing.T) {
 	rec := httptest.NewRecorder()
 
 	mockErr := errors.New("Error")
-	mockService.On("GetAll", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, mockErr).Once()
+	mockService.On("GetAllPaginated", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, 0, mockErr).Once()
 
 	controller.GetAll(rec, req)
 
@@ -563,6 +561,53 @@ func TestPostController_GetAll_ServiceError(t *testing.T) {
 	assert.Equal(t, "An unexpected error occurred", response.Message)
 	assert.Equal(t, 0, response.Status)
 	assert.Nil(t, response.Data)
+
+	mockService.AssertExpectations(t)
+}
+
+func TestPostController_GetAll_Paginated_Success(t *testing.T) {
+	mockService := new(mocks.MockPostService)
+	controller := &controllers.PostController{
+		PostService: mockService,
+	}
+
+	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
+	user1 := &entities.User{
+		ID: uuid.New(),
+	}
+	user2 := &entities.User{
+		ID: uuid.New(),
+	}
+	expectedPosts := []entities.Post{
+		{ID: uuid.New(), Title: "Post 1", Body: "Body 1", User: user1, CreatedAt: time.Now()},
+		{ID: uuid.New(), Title: "Post 2", Body: "Body 2", User: user2, CreatedAt: time.Now()},
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/post?search=test&page=1&limit=10", nil)
+	req = req.WithContext(ctx)
+	rec := httptest.NewRecorder()
+
+	mockService.On("GetAllPaginated", mock.Anything, "test", 1, 10).Return(expectedPosts, 2, nil).Once()
+
+	controller.GetAll(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+	var response dto.PaginatedWebResponse
+	err := json.Unmarshal(rec.Body.Bytes(), &response)
+	assert.NoError(t, err)
+
+	assert.Equal(t, "Successfully Get posts", response.Message)
+	assert.Equal(t, 1, response.Status)
+	assert.NotNil(t, response.Data)
+	assert.Len(t, response.Data, 2)
+
+	// Check pagination metadata
+	assert.Equal(t, 1, response.Pagination.CurrentPage)
+	assert.Equal(t, 10, response.Pagination.PageSize)
+	assert.Equal(t, 2, response.Pagination.TotalItems)
+	assert.Equal(t, 1, response.Pagination.TotalPages)
+	assert.Equal(t, false, response.Pagination.HasNext)
+	assert.Equal(t, false, response.Pagination.HasPrev)
 
 	mockService.AssertExpectations(t)
 }
