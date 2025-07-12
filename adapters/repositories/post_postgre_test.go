@@ -175,6 +175,39 @@ func TestPostRepository_Delete_NotFound(t *testing.T) {
 	)
 }
 
+func TestPostRepository_CountPost(t *testing.T) {
+	testutils.WithTransactionTest(t,
+		func(db ports.Database) (ports.PostRepository, error) {
+			return &repositories.PostRepositoryPostgre{}, nil
+		},
+		func(ctx context.Context, postRepo ports.PostRepository, tx ports.Transaction) {
+			userRepo := &repositories.UserRepositoryPostgre{}
+			testUser := &entities.User{
+				Email:    "testuser_getbyid@example.com",
+				Password: "secret",
+			}
+			savedUser, err := userRepo.Save(ctx, tx, testUser)
+			require.NoError(t, err)
+			testUser.ID = savedUser.ID
+
+			author := &entities.User{
+				ID: savedUser.ID,
+			}
+			post := &entities.Post{
+				Title: "Get Me Post",
+				Body:  "This is the body of the post to get.",
+				User:  author,
+			}
+			_, err = postRepo.Save(ctx, tx, post)
+			require.NoError(t, err)
+
+			totalPost, err := postRepo.CountPost(ctx, tx)
+			require.NoError(t, err)
+			require.Equal(t, uint32(1), totalPost)
+		},
+	)
+}
+
 func TestPostRepository_GetById(t *testing.T) {
 	testutils.WithTransactionTest(t,
 		func(db ports.Database) (ports.PostRepository, error) {
