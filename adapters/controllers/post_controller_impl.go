@@ -12,6 +12,7 @@ import (
 	"github.com/chud-lori/go-boilerplate/domain/ports"
 	appErrors "github.com/chud-lori/go-boilerplate/pkg/errors"
 	"github.com/chud-lori/go-boilerplate/pkg/logger"
+	paginationutil "github.com/chud-lori/go-boilerplate/pkg/pagination"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 )
@@ -338,15 +339,15 @@ func (c *PostController) GetById(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetAllPosts godoc
-// @Summary Get all posts
-// @Description Retrieves a list of all posts. Supports optional filtering by search query and pagination.
+// @Summary Get all posts with pagination
+// @Description Retrieves a paginated list of all posts. The response includes a data array of posts and a pagination object with metadata (current_page, page_size, total_items, total_pages, has_next, has_prev). Supports optional filtering by search query and pagination.
 // @ID get-all-posts
 // @Tags Posts
 // @Produce json
 // @Param search query string false "Search term to filter posts by title or body"
 // @Param page query int false "Page number for pagination (default: 1)"
 // @Param limit query int false "Number of posts per page (default: 10)"
-// @Success 200 {object} dto.WebResponse{data=[]dto.PostResponse} "Successfully retrieved all posts"
+// @Success 200 {object} dto.PaginatedWebResponse "Successfully retrieved all posts with pagination"
 // @Failure 500 {object} dto.WebResponse "Internal server error"
 // @Router /post [get]
 // @Security ApiKeyAuth
@@ -368,7 +369,7 @@ func (c *PostController) GetAll(w http.ResponseWriter, r *http.Request) {
 		limit = 10 // Default limit
 	}
 
-	posts, err := c.PostService.GetAll(ctx, search, page, limit)
+	posts, totalItems, err := c.PostService.GetAllPaginated(ctx, search, page, limit)
 
 	if err != nil {
 		var appErr *appErrors.AppError
@@ -389,10 +390,23 @@ func (c *PostController) GetAll(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	resp := &dto.WebResponse{
-		Message: "Successfully Get posts",
-		Status:  1,
-		Data:    posts,
+	// Calculate pagination metadata using utility
+	currentPage, pageSize, totalPages, hasNext, hasPrev := paginationutil.CalculatePagination(page, limit, totalItems)
+
+	paginationMeta := dto.PaginationResponse{
+		CurrentPage: currentPage,
+		PageSize:    pageSize,
+		TotalItems:  totalItems,
+		TotalPages:  totalPages,
+		HasNext:     hasNext,
+		HasPrev:     hasPrev,
+	}
+
+	resp := &dto.PaginatedWebResponse{
+		Message:    "Successfully Get posts",
+		Status:     1,
+		Data:       posts,
+		Pagination: paginationMeta,
 	}
 
 	helper.WriteResponse(w, resp, http.StatusOK)
