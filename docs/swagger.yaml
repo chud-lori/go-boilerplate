@@ -48,6 +48,31 @@ definitions:
       title:
         type: string
     type: object
+  dto.PaginatedWebResponse:
+    properties:
+      data: {}
+      message:
+        type: string
+      pagination:
+        $ref: '#/definitions/dto.PaginationResponse'
+      status:
+        type: integer
+    type: object
+  dto.PaginationResponse:
+    properties:
+      current_page:
+        type: integer
+      has_next:
+        type: boolean
+      has_prev:
+        type: boolean
+      page_size:
+        type: integer
+      total_items:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
   dto.PostResponse:
     properties:
       author_id:
@@ -93,8 +118,8 @@ definitions:
     type: object
   entities.Post:
     properties:
-      author_id:
-        type: string
+      author:
+        $ref: '#/definitions/entities.User'
       body:
         type: string
       created_at:
@@ -102,6 +127,17 @@ definitions:
       id:
         type: string
       title:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  entities.User:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
         type: string
     type: object
 info:
@@ -114,8 +150,10 @@ info:
 paths:
   /post:
     get:
-      description: Retrieves a list of all posts. Supports optional filtering by search
-        query and pagination.
+      description: Retrieves a paginated list of all posts. The response includes
+        a data array of posts and a pagination object with metadata (current_page,
+        page_size, total_items, total_pages, has_next, has_prev). Supports optional
+        filtering by search query and pagination.
       operationId: get-all-posts
       parameters:
       - description: Search term to filter posts by title or body
@@ -134,23 +172,16 @@ paths:
       - application/json
       responses:
         "200":
-          description: Successfully retrieved all posts
+          description: Successfully retrieved all posts with pagination
           schema:
-            allOf:
-            - $ref: '#/definitions/dto.WebResponse'
-            - properties:
-                data:
-                  items:
-                    $ref: '#/definitions/dto.PostResponse'
-                  type: array
-              type: object
+            $ref: '#/definitions/dto.PaginatedWebResponse'
         "500":
           description: Internal server error
           schema:
             $ref: '#/definitions/dto.WebResponse'
       security:
       - ApiKeyAuth: []
-      summary: Get all posts
+      summary: Get all posts with pagination
       tags:
       - Posts
     post:

@@ -13,4 +13,5 @@ type PostService interface {
 	Delete(ctx context.Context, id uuid.UUID) error
 	GetById(ctx context.Context, id uuid.UUID) (*entities.Post, error)
 	GetAll(ctx context.Context, search string, page, limit int) ([]entities.Post, error)
+	GetAllPaginated(ctx context.Context, search string, page, limit int) ([]entities.Post, int, error)
 }

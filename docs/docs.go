@@ -22,14 +22,14 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Retrieves a list of all posts. Supports optional filtering by search query and pagination.",
+                "description": "Retrieves a paginated list of all posts. The response includes a data array of posts and a pagination object with metadata (current_page, page_size, total_items, total_pages, has_next, has_prev). Supports optional filtering by search query and pagination.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Posts"
                 ],
-                "summary": "Get all posts",
+                "summary": "Get all posts with pagination",
                 "operationId": "get-all-posts",
                 "parameters": [
                     {
@@ -53,24 +53,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Successfully retrieved all posts",
+                        "description": "Successfully retrieved all posts with pagination",
                         "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/dto.WebResponse"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/definitions/dto.PostResponse"
-                                            }
-                                        }
-                                    }
-                                }
-                            ]
+                            "$ref": "#/definitions/dto.PaginatedWebResponse"
                         }
                     },
                     "500": {
@@ -820,6 +805,44 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.PaginatedWebResponse": {
+            "type": "object",
+            "properties": {
+                "data": {},
+                "message": {
+                    "type": "string"
+                },
+                "pagination": {
+                    "$ref": "#/definitions/dto.PaginationResponse"
+                },
+                "status": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.PaginationResponse": {
+            "type": "object",
+            "properties": {
+                "current_page": {
+                    "type": "integer"
+                },
+                "has_next": {
+                    "type": "boolean"
+                },
+                "has_prev": {
+                    "type": "boolean"
+                },
+                "page_size": {
+                    "type": "integer"
+                },
+                "total_items": {
+                    "type": "integer"
+                },
+                "total_pages": {
+                    "type": "integer"
+                }
+            }
+        },
         "dto.PostResponse": {
             "type": "object",
             "properties": {
@@ -887,8 +910,8 @@ const docTemplate = `{
         "entities.Post": {
             "type": "object",
             "properties": {
-                "author_id": {
-                    "type": "string"
+                "author": {
+                    "$ref": "#/definitions/entities.User"
                 },
                 "body": {
                     "type": "string"
@@ -900,6 +923,23 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "title": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "entities.User": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
                     "type": "string"
                 }
             }
