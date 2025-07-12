@@ -55,3 +55,15 @@ func (_m *MockPostService) GetAll(ctx context.Context, search string, page int, 
 	}
 	return nil, args.Error(1)
 }
+
+// GetAllPaginated provides a mock function with given fields: ctx, search, page, limit
+func (_m *MockPostService) GetAllPaginated(ctx context.Context, search string, page int, limit int) ([]entities.Post, int, error) {
+	args := _m.Called(ctx, search, page, limit)
+	var r0 []entities.Post
+	if args.Get(0) != nil {
+		r0 = args.Get(0).([]entities.Post)
+	}
+	r1 := args.Get(1).(int)
+	r2 := args.Error(2)
+	return r0, r1, r2
+}
