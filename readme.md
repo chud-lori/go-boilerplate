@@ -14,6 +14,7 @@ A modern, production-ready Go boilerplate for building scalable web APIs and mic
 - **Clean Architecture**: Separation of concerns with domain, adapters, and infrastructure layers.
 - **REST API**: User CRUD endpoints with DTOs, controllers, and routing.
 - **gRPC Support**: Example gRPC service (Mail) with protobuf definitions and testable client/server.
+- **Circuit Breaker Pattern**: Resilient external service communication using [gobreaker](https://github.com/sony/gobreaker) for both HTTP API and gRPC clients.
 - **Caching (Redis)**: In-memory caching with Redis through a Cache interface for performance optimization.
 - **PostgreSQL Integration**: Repository pattern with transaction support, migrations, and test containers for DB testing.
 - **Database Migrations**: Built-in support with [golang-migrate](https://github.com/golang-migrate/migrate).
@@ -53,9 +54,10 @@ A modern, production-ready Go boilerplate for building scalable web APIs and mic
 │   └── services/              # Application use case implementations
 │
 ├── infrastructure/           # External infrastructure implementations
-│   ├── cache/                 # Redis cache implementation
-│   ├── datastore/             # PostgreSQL DB setup and connection logic
-│   └── grpc_clients/          # gRPC clients used by the application
+│   ├── api_clients/           # HTTP API clients with circuit breaker
+│   ├── cache/                 # Redis cache implementation
+│   ├── datastore/             # PostgreSQL DB setup and connection logic
+│   └── grpc_clients/          # gRPC clients used by the application
 │
 ├── internal/                 # Internal packages
 │   ├── testutils/             # Helpers and setup for tests
@@ -227,6 +229,37 @@ This boilerplate includes a k6 script for load testing the REST API endpoints. T
     - Used in services for cache-first logic (e.g., `GetAll()` → check cache → fallback to DB)
 - **Implementation**: `infrastructure/cache/redis_cache.go`
 - **Tested via**: [testcontainers-go](https://github.com/testcontainers/testcontainers-go)
+
+---
+
+## ⚡ Circuit Breaker Pattern
+
+This boilerplate implements the Circuit Breaker pattern using [gobreaker](https://github.com/sony/gobreaker) to handle external service failures gracefully.
+
+### Implementation
+
+- **API Mail Client** (`infrastructure/api_clients/mail_api.go`): HTTP-based mail service with circuit breaker
+- **gRPC Mail Client** (`infrastructure/grpc_clients/mail_grpc.go`): gRPC-based mail service with circuit breaker
+
+### Configuration
+
+Both clients use the same circuit breaker settings:
+- **MaxRequests**: 3 (number of test requests in half-open state)
+- **Interval**: 60 seconds (time window for counting failures)
+- **Timeout**: 10 seconds (time to wait before transitioning from open to half-open)
+
+### States
+
+1. **Closed**: Normal operation, requests pass through
+2. **Open**: Service is failing, requests are rejected immediately
+3. **Half-Open**: Testing if service has recovered, limited requests allowed
+
+### Benefits
+
+- **Fault Tolerance**: Prevents cascading failures when external services are down
+- **Fast Failure**: Quick response when services are unavailable
+- **Automatic Recovery**: Self-healing when external services come back online
+- **Resource Protection**: Prevents resource exhaustion during outages
 
 ---
 
