@@ -64,3 +64,14 @@ func (_m *MockPostRepository) GetAll(ctx context.Context, tx ports.Transaction, 
 	r1 := args.Error(1)
 	return r0, r1
 }
+
+// CountPost provides a mock function with given fields: ctx, tx
+func (_m *MockPostRepository) CountPost(ctx context.Context, tx ports.Transaction) (uint32, error) {
+	args := _m.Called(ctx, tx)
+	var r0 uint32
+	if args.Get(0) != nil {
+		r0 = args.Get(0).(uint32)
+	}
+	r1 := args.Error(1)
+	return r0, r1
+}
