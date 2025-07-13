@@ -7,41 +7,17 @@ import (
 	"time"
 
 	"github.com/chud-lori/go-boilerplate/infrastructure/cache"
+	"github.com/chud-lori/go-boilerplate/internal/testutils"
 	"github.com/chud-lori/go-boilerplate/pkg/logger"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	"github.com/testcontainers/testcontainers-go"
-	"github.com/testcontainers/testcontainers-go/wait"
 )
-
-func setupRedisContainer(ctx context.Context) (testcontainers.Container, string, error) {
-	req := testcontainers.ContainerRequest{
-		Image:        "redis:7-alpine",
-		ExposedPorts: []string{"6379/tcp"},
-		WaitingFor:   wait.ForListeningPort("6379/tcp").WithStartupTimeout(10 * time.Second),
-	}
-	redisC, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
-		ContainerRequest: req,
-		Started:          true,
-	})
-	if err != nil {
-		return nil, "", err
-	}
-
-	endpoint, err := redisC.Endpoint(ctx, "")
-	if err != nil {
-		redisC.Terminate(ctx)
-		return nil, "", err
-	}
-
-	return redisC, endpoint, nil
-}
 
 func TestRedisCache(t *testing.T) {
 	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
 
 	// Start Redis container
-	redisC, addr, err := setupRedisContainer(ctx)
+	redisC, addr, err := testutils.SetupRedisContainer(ctx)
 	assert.NoError(t, err)
 	defer redisC.Terminate(ctx)
 
