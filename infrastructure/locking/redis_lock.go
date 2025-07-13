@@ -11,13 +11,11 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// RedisLocker implements the ports.Locking interface using Redis.
 type RedisLocker struct {
 	client *redis.Client
-	logger *logrus.Entry // Use logrus.Entry for context-specific logging
+	logger *logrus.Entry
 }
 
-// NewRedisLocker creates a new Redis-based locker.
 func NewRedisLocker(addr string, password string, db int, logger *logrus.Logger) (ports.Locking, error) {
 	client := redis.NewClient(&redis.Options{
 		Addr:     addr,
@@ -29,7 +27,7 @@ func NewRedisLocker(addr string, password string, db int, logger *logrus.Logger)
 	defer cancel()
 
 	redisLogger := logger.WithFields(logrus.Fields{
-		"layer":  "locking_driver", // Different layer for clarity
+		"layer":  "locking_driver",
 		"driver": addr,
 	})
 
@@ -42,12 +40,9 @@ func NewRedisLocker(addr string, password string, db int, logger *logrus.Logger)
 	return &RedisLocker{client: client, logger: redisLogger}, nil
 }
 
-// AcquireLock implements the AcquireLock method of the Locking interface.
-// It returns true if acquired, the unique value used, and an error.
 func (rl *RedisLocker) AcquireLock(lockKey string, ttl time.Duration) (bool, string, error) {
-	uniqueValue := uuid.New().String() // Generate a new unique ID for this lock attempt
+	uniqueValue := uuid.New().String()
 
-	// SET key value NX EX seconds
 	acquired, err := rl.client.SetNX(context.Background(), lockKey, uniqueValue, ttl).Result()
 	if err != nil {
 		rl.logger.WithError(err).Errorf("Failed to acquire lock for key: %s", lockKey)
