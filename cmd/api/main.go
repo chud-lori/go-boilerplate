@@ -14,9 +14,9 @@ import (
 	"github.com/chud-lori/go-boilerplate/config"
 	_ "github.com/chud-lori/go-boilerplate/docs"
 	"github.com/chud-lori/go-boilerplate/domain/services"
-	"github.com/chud-lori/go-boilerplate/infrastructure/api_clients"
 	"github.com/chud-lori/go-boilerplate/infrastructure/cache"
 	"github.com/chud-lori/go-boilerplate/infrastructure/datastore"
+	"github.com/chud-lori/go-boilerplate/infrastructure/grpc_clients"
 	"github.com/chud-lori/go-boilerplate/internal/utils"
 	"github.com/chud-lori/go-boilerplate/pkg/auth"
 	"github.com/chud-lori/go-boilerplate/pkg/logger"
@@ -58,25 +58,32 @@ func main() {
 
 	db, err := datastore.NewPostgreDatabase(cfg.DatabaseURL, baseLogger)
 	if err != nil {
-		baseLogger.Fatal("Failed to connect to database:", err)
+		baseLogger.Fatal("Failed to connect to database: ", err)
 	}
 	defer db.Close()
 
 	cache, err := cache.NewRedisCache(cfg.RedisAddr, cfg.RedisPassword, cfg.RedisDB, baseLogger)
 	if err != nil {
-		baseLogger.Fatal("Failed to connect to cache server:", err)
+		baseLogger.Fatal("Failed to connect to cache server: ", err)
 	}
 	defer cache.Close()
 
 	mailGrpcConn, err := grpc.NewClient(cfg.MailServer, grpc.WithTransportCredentials(insecure.NewCredentials())) // Use WithTransportCredentials for production
 	if err != nil {
-		log.Fatalf("did not connect to mail gRPC service: %v", err)
+		log.Fatal("did not connect to mail gRPC service: ", err)
 	}
 	defer mailGrpcConn.Close()
 
+	// Use in service if needed
+	// lock, err := locking.NewRedisLocker(cfg.RedisAddr, cfg.RedisPassword, 1, baseLogger)
+	// if err != nil {
+	// 	log.Fatal("Failed to connect redis for locking: ", err)
+	// }
+	// defer lock.Close()
+
 	// To use the API-based mail client instead of gRPC, uncomment the following line and comment out the gRPC one above:
-	mailClient := api_clients.NewApiMailClient("http://localhost:8081/send-mail") // Replace with your real API endpoint
-	// mailClient := grpc_clients.NewGrpcMailClient(mailGrpcConn)
+	// mailClient := api_clients.NewApiMailClient("http://localhost:8081/send-mail")
+	mailClient := grpc_clients.NewGrpcMailClient(mailGrpcConn)
 
 	ctxTimeout := 60 * time.Second
 

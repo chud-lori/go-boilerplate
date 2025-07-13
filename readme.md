@@ -16,6 +16,7 @@ A modern, production-ready Go boilerplate for building scalable web APIs and mic
 - **gRPC Support**: Example gRPC service (Mail) with protobuf definitions and testable client/server.
 - **Circuit Breaker Pattern**: Resilient external service communication using [gobreaker](https://github.com/sony/gobreaker) for both HTTP API and gRPC clients.
 - **Caching (Redis)**: In-memory caching with Redis through a Cache interface for performance optimization.
+- **Pessimistic Locking (Redis)**: Distributed pessimistic locking using Redis to ensure data consistency in concurrent operations.
 - **PostgreSQL Integration**: Repository pattern with transaction support, migrations, and test containers for DB testing.
 - **Database Migrations**: Built-in support with [golang-migrate](https://github.com/golang-migrate/migrate).
 - **Middleware**: Logging, API key authentication, and request context propagation.
@@ -57,7 +58,8 @@ A modern, production-ready Go boilerplate for building scalable web APIs and mic
 │   ├── api_clients/           # HTTP API clients with circuit breaker
 │   ├── cache/                 # Redis cache implementation
 │   ├── datastore/             # PostgreSQL DB setup and connection logic
-│   └── grpc_clients/          # gRPC clients used by the application
+│   ├── grpc_clients/          # gRPC clients used by the application
+│   └── locking/               # Pessimistic locking using redis
 │
 ├── internal/                 # Internal packages
 │   ├── testutils/             # Helpers and setup for tests
