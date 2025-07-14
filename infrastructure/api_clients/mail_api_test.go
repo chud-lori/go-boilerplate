@@ -13,16 +13,8 @@ import (
 	"github.com/sony/gobreaker/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/chud-lori/go-boilerplate/internal/testutils"
 )
-
-func freshBreaker() *gobreaker.CircuitBreaker[[]byte] {
-	var st gobreaker.Settings
-	st.Name = "TestApiMailClient"
-	st.MaxRequests = 3
-	st.Interval = 60 * time.Second
-	st.Timeout = 10 * time.Second
-	return gobreaker.NewCircuitBreaker[[]byte](st)
-}
 
 // Add test-only helper for custom breaker
 func newApiMailClientWithBreaker(endpoint string, breaker *gobreaker.CircuitBreaker[[]byte]) *ApiMailClient {
@@ -35,7 +27,7 @@ func newApiMailClientWithBreaker(endpoint string, breaker *gobreaker.CircuitBrea
 
 func TestNewApiMailClient(t *testing.T) {
 	endpoint := "http://example.com/mail"
-	client := newApiMailClientWithBreaker(endpoint, freshBreaker())
+	client := newApiMailClientWithBreaker(endpoint, testutils.FreshMailBreaker())
 
 	assert.Equal(t, endpoint, client.Endpoint)
 	assert.NotNil(t, client.Client)
@@ -66,7 +58,7 @@ func TestApiMailClient_SendMail_Success(t *testing.T) {
 	defer server.Close()
 
 	// Create client and context
-	client := newApiMailClientWithBreaker(server.URL, freshBreaker())
+	client := newApiMailClientWithBreaker(server.URL, testutils.FreshMailBreaker())
 	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
 
 	// Test SendMail
@@ -82,7 +74,7 @@ func TestApiMailClient_SendMail_AcceptedStatus(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := newApiMailClientWithBreaker(server.URL, freshBreaker())
+	client := newApiMailClientWithBreaker(server.URL, testutils.FreshMailBreaker())
 	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
 
 	err := client.SendMail(ctx, "test@example.com", "Test message")
@@ -97,7 +89,7 @@ func TestApiMailClient_SendMail_ErrorStatus(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := newApiMailClientWithBreaker(server.URL, freshBreaker())
+	client := newApiMailClientWithBreaker(server.URL, testutils.FreshMailBreaker())
 	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
 
 	err := client.SendMail(ctx, "test@example.com", "Test message")
@@ -107,7 +99,7 @@ func TestApiMailClient_SendMail_ErrorStatus(t *testing.T) {
 
 func TestApiMailClient_SendMail_NetworkError(t *testing.T) {
 	// Create client with invalid endpoint
-	client := newApiMailClientWithBreaker("http://invalid-endpoint-that-does-not-exist.com", freshBreaker())
+	client := newApiMailClientWithBreaker("http://invalid-endpoint-that-does-not-exist.com", testutils.FreshMailBreaker())
 	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
 
 	err := client.SendMail(ctx, "test@example.com", "Test message")
@@ -116,7 +108,7 @@ func TestApiMailClient_SendMail_NetworkError(t *testing.T) {
 
 func TestApiMailClient_SendMail_RequestCreationError(t *testing.T) {
 	// Create client with invalid URL to cause request creation error
-	client := newApiMailClientWithBreaker("://invalid-url", freshBreaker())
+	client := newApiMailClientWithBreaker("://invalid-url", testutils.FreshMailBreaker())
 	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
 
 	err := client.SendMail(ctx, "test@example.com", "Test message")
@@ -130,7 +122,7 @@ func TestApiMailClient_CircuitBreaker_OpenState(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := newApiMailClientWithBreaker(server.URL, freshBreaker())
+	client := newApiMailClientWithBreaker(server.URL, testutils.FreshMailBreaker())
 	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
 
 	// Make multiple requests to trigger circuit breaker
@@ -158,7 +150,7 @@ func TestApiMailClient_CircuitBreaker_HalfOpenState(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := newApiMailClientWithBreaker(server.URL, freshBreaker())
+	client := newApiMailClientWithBreaker(server.URL, testutils.FreshMailBreaker())
 	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
 
 	// Make initial requests to trigger circuit breaker
@@ -189,7 +181,7 @@ func TestApiMailClient_CircuitBreaker_Recovery(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := newApiMailClientWithBreaker(server.URL, freshBreaker())
+	client := newApiMailClientWithBreaker(server.URL, testutils.FreshMailBreaker())
 	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
 
 	// Make a few failing requests
@@ -212,7 +204,7 @@ func TestApiMailClient_ConcurrentRequests(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := newApiMailClientWithBreaker(server.URL, freshBreaker())
+	client := newApiMailClientWithBreaker(server.URL, testutils.FreshMailBreaker())
 	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
 
 	// Make concurrent requests
@@ -241,7 +233,7 @@ func TestApiMailClient_Timeout(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := newApiMailClientWithBreaker(server.URL, freshBreaker())
+	client := newApiMailClientWithBreaker(server.URL, testutils.FreshMailBreaker())
 	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
 
 	err := client.SendMail(ctx, "test@example.com", "Test message")
@@ -256,7 +248,7 @@ func TestApiMailClient_ContextCancellation(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := newApiMailClientWithBreaker(server.URL, freshBreaker())
+	client := newApiMailClientWithBreaker(server.URL, testutils.FreshMailBreaker())
 	ctx, cancel := context.WithCancel(context.Background())
 	ctx = context.WithValue(ctx, logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
 
@@ -282,7 +274,7 @@ func TestApiMailClient_EmptyEmailAndMessage(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := newApiMailClientWithBreaker(server.URL, freshBreaker())
+	client := newApiMailClientWithBreaker(server.URL, testutils.FreshMailBreaker())
 	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
 
 	err := client.SendMail(ctx, "", "")
@@ -304,7 +296,7 @@ func TestApiMailClient_SpecialCharacters(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := newApiMailClientWithBreaker(server.URL, freshBreaker())
+	client := newApiMailClientWithBreaker(server.URL, testutils.FreshMailBreaker())
 	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
 
 	err := client.SendMail(ctx, "test+special@example.com", "Message with special chars: !@#$%^&*()")

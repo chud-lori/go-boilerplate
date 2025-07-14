@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/chud-lori/go-boilerplate/infrastructure/grpc_clients"
+	"github.com/chud-lori/go-boilerplate/internal/testutils"
 	"github.com/chud-lori/go-boilerplate/pkg/logger"
 	pb "github.com/chud-lori/go-boilerplate/proto"
 	"github.com/sirupsen/logrus"
@@ -21,16 +22,6 @@ import (
 
 const bufSize = 1024 * 1024
 
-func freshBreaker() *gobreaker.CircuitBreaker[[]byte] {
-	var st gobreaker.Settings
-	st.Name = "TestGrpcMailClient"
-	st.MaxRequests = 3
-	st.Interval = 60 * time.Second
-	st.Timeout = 10 * time.Second
-	return gobreaker.NewCircuitBreaker[[]byte](st)
-}
-
-// Test helper for creating client with custom breaker
 func newGrpcMailClientWithBreaker(conn grpc.ClientConnInterface, breaker *gobreaker.CircuitBreaker[[]byte]) *grpc_clients.GrpcMailClient {
 	return &grpc_clients.GrpcMailClient{
 		Conn:    conn,
@@ -38,12 +29,10 @@ func newGrpcMailClientWithBreaker(conn grpc.ClientConnInterface, breaker *gobrea
 	}
 }
 
-// mockMailServer is a mock implementation of your MailService gRPC server
 type mockMailServer struct {
-	pb.UnimplementedMailServer // Embed this to ensure forward compatibility
+	pb.UnimplementedMailServer
 }
 
-// SendMail implements the SendMail method of the MailService
 func (s *mockMailServer) SendMail(ctx context.Context, req *pb.MailRequest) (*pb.MailReply, error) {
 	// Simulate some server-side logic
 	if req.GetEmail() == "" {
@@ -120,10 +109,10 @@ func TestGrpcMailClient_SendMail_Success(t *testing.T) {
 
 	lis, s, conn := setupTestServer(t)
 	defer conn.Close()
-	defer s.Stop()    // Explicitly stop the server
-	defer lis.Close() // Close the listener
+	defer s.Stop()
+	defer lis.Close()
 
-	client := newGrpcMailClientWithBreaker(conn, freshBreaker())
+	client := newGrpcMailClientWithBreaker(conn, testutils.FreshBreaker("TestGrpcMailClient"))
 
 	email := "test@example.com"
 	message := "Hello, this is a test email."
@@ -139,10 +128,10 @@ func TestGrpcMailClient_SendMail_InvalidInput(t *testing.T) {
 
 	lis, s, conn := setupTestServer(t)
 	defer conn.Close()
-	defer s.Stop()    // Explicitly stop the server
-	defer lis.Close() // Close the listener
+	defer s.Stop()
+	defer lis.Close()
 
-	client := newGrpcMailClientWithBreaker(conn, freshBreaker())
+	client := newGrpcMailClientWithBreaker(conn, testutils.FreshBreaker("TestGrpcMailClient"))
 
 	// Test case: empty email
 	err := client.SendMail(ctx, "", "Some message")
@@ -201,7 +190,7 @@ func TestGrpcMailClient_CircuitBreaker_OpenState(t *testing.T) {
 	defer s.Stop()
 	defer lis.Close()
 
-	client := newGrpcMailClientWithBreaker(conn, freshBreaker())
+	client := newGrpcMailClientWithBreaker(conn, testutils.FreshBreaker("TestGrpcMailClient"))
 
 	// Make multiple requests to trigger circuit breaker
 	for i := 0; i < 5; i++ {
@@ -248,7 +237,7 @@ func TestGrpcMailClient_CircuitBreaker_Recovery(t *testing.T) {
 	defer s.Stop()
 	defer lis.Close()
 
-	client := newGrpcMailClientWithBreaker(conn, freshBreaker())
+	client := newGrpcMailClientWithBreaker(conn, testutils.FreshBreaker("TestGrpcMailClient"))
 
 	// Make a few failing requests
 	for i := 0; i < 2; i++ {
@@ -273,7 +262,7 @@ func TestGrpcMailClient_ConcurrentRequests(t *testing.T) {
 	defer s.Stop()
 	defer lis.Close()
 
-	client := newGrpcMailClientWithBreaker(conn, freshBreaker())
+	client := newGrpcMailClientWithBreaker(conn, testutils.FreshBreaker("TestGrpcMailClient"))
 
 	// Make concurrent requests
 	const numRequests = 5
