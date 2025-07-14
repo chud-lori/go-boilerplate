@@ -26,6 +26,7 @@ func TestAuthService_SignIn_Success(t *testing.T) {
 	mockEnc := new(mocks.MockEncryptor)
 	mockToken := new(mocks.MockTokenManager)
 	mockTx := new(mocks.MockTransaction)
+	mockApi := new(mocks.MockExternalApiClient)
 
 	service := &services.AuthServiceImpl{
 		DB:             mockDB,
@@ -33,6 +34,7 @@ func TestAuthService_SignIn_Success(t *testing.T) {
 		MailService:    mockMailSrv,
 		Encryptor:      mockEnc,
 		TokenManager:   mockToken,
+		ExternalApi:    mockApi,
 		CtxTimeout:     2 * time.Second,
 	}
 
@@ -45,6 +47,7 @@ func TestAuthService_SignIn_Success(t *testing.T) {
 	mockEnc.On("CompareHash", foundUser.Password, mockUser.Password).Return(nil)
 	mockToken.On("GenerateToken", mockUser.ID.String()).Return("generatedtoken", nil)
 	mockTx.On("Commit").Return(nil)
+	mockApi.On("DoRequest", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return([]byte(`{"result":"ok"}`), nil)
 	mockMailSrv.On("SendSignInNotification", mock.Anything, foundUser.Email, "User logged in just now").Return(nil)
 
 	_, token, err := service.SignIn(ctx, mockUser)
