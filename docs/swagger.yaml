@@ -93,8 +93,8 @@ definitions:
     type: object
   entities.Post:
     properties:
-      author_id:
-        type: string
+      author:
+        $ref: '#/definitions/entities.User'
       body:
         type: string
       created_at:
@@ -102,6 +102,17 @@ definitions:
       id:
         type: string
       title:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  entities.User:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
         type: string
     type: object
 info:

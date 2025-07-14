@@ -181,6 +181,7 @@ func main() {
 	// ========== Global Middleware Chain ==========
 
 	var handler http.Handler = router
+	handler = middleware.RecoveryMiddleware(handler, baseLogger)
 	handler = middleware.LogTrafficMiddleware(handler, baseLogger)
 	handler = middleware.APIKeyMiddleware(handler, cfg.APIKey, baseLogger)
 	handler = middleware.CorsMiddleware(handler)
