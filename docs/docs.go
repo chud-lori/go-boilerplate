@@ -887,8 +887,8 @@ const docTemplate = `{
         "entities.Post": {
             "type": "object",
             "properties": {
-                "author_id": {
-                    "type": "string"
+                "author": {
+                    "$ref": "#/definitions/entities.User"
                 },
                 "body": {
                     "type": "string"
@@ -900,6 +900,23 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "title": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "entities.User": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
                     "type": "string"
                 }
             }
