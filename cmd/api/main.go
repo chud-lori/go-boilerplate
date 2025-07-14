@@ -14,6 +14,7 @@ import (
 	"github.com/chud-lori/go-boilerplate/config"
 	_ "github.com/chud-lori/go-boilerplate/docs"
 	"github.com/chud-lori/go-boilerplate/domain/services"
+	"github.com/chud-lori/go-boilerplate/infrastructure/api_clients"
 	"github.com/chud-lori/go-boilerplate/infrastructure/cache"
 	"github.com/chud-lori/go-boilerplate/infrastructure/datastore"
 	"github.com/chud-lori/go-boilerplate/infrastructure/grpc_clients"
@@ -81,6 +82,8 @@ func main() {
 	// }
 	// defer lock.Close()
 
+	externalApiClient := api_clients.NewApiClient("ExternalService", baseLogger)
+
 	// To use the API-based mail client instead of gRPC, uncomment the following line and comment out the gRPC one above:
 	// mailClient := api_clients.NewApiMailClient("http://localhost:8081/send-mail")
 	mailClient := grpc_clients.NewGrpcMailClient(mailGrpcConn)
@@ -111,6 +114,7 @@ func main() {
 		MailService:    mailService,
 		Encryptor:      encryptor,
 		TokenManager:   tokenManager,
+		ExternalApi:    externalApiClient,
 		CtxTimeout:     ctxTimeout,
 	}
 
