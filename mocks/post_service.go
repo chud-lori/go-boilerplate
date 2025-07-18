@@ -55,3 +55,15 @@ func (_m *MockPostService) GetAll(ctx context.Context, search string, page int, 
 	}
 	return nil, args.Error(1)
 }
+
+// StartAsyncUpload provides a mock function for async upload
+func (_m *MockPostService) StartAsyncUpload(ctx context.Context, postID uuid.UUID, fileName, fileType string, fileData []byte) (uuid.UUID, error) {
+	args := _m.Called(ctx, postID, fileName, fileType, fileData)
+	return args.Get(0).(uuid.UUID), args.Error(1)
+}
+
+// GetUploadStatus provides a mock function for getting upload status
+func (_m *MockPostService) GetUploadStatus(ctx context.Context, uploadID uuid.UUID) (entities.UploadStatus, error) {
+	args := _m.Called(ctx, uploadID)
+	return args.Get(0).(entities.UploadStatus), args.Error(1)
+}
