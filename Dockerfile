@@ -31,8 +31,17 @@ FROM alpine:latest
 
 WORKDIR /app
 
-# Just copy the built binaries and env file
+# Create a non-root user and group
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+# Copy the built binaries and env file
 COPY --from=builder /app/bin/api-service ./api-service
 COPY --from=builder /app/bin/grpc-server ./grpc-server
 COPY --from=builder /app/bin/upload-consumer ./upload-consumer
 COPY --from=builder /app/.env .
+
+# Change ownership to the non-root user
+RUN chown -R appuser:appgroup /app
+
+# Switch to non-root user
+USER appuser
