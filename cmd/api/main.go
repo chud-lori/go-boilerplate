@@ -18,6 +18,7 @@ import (
 	"github.com/chud-lori/go-boilerplate/infrastructure/cache"
 	"github.com/chud-lori/go-boilerplate/infrastructure/datastore"
 	"github.com/chud-lori/go-boilerplate/infrastructure/grpc_clients"
+	"github.com/chud-lori/go-boilerplate/infrastructure/queue"
 	"github.com/chud-lori/go-boilerplate/internal/utils"
 	"github.com/chud-lori/go-boilerplate/pkg/auth"
 	"github.com/chud-lori/go-boilerplate/pkg/logger"
@@ -61,32 +62,35 @@ func main() {
 	if err != nil {
 		baseLogger.Fatal("Failed to connect to database: ", err)
 	}
-	defer db.Close()
 
 	cache, err := cache.NewRedisCache(cfg.RedisAddr, cfg.RedisPassword, cfg.RedisDB, baseLogger)
 	if err != nil {
 		baseLogger.Fatal("Failed to connect to cache server: ", err)
 	}
-	defer cache.Close()
 
 	mailGrpcConn, err := grpc.NewClient(cfg.MailServer, grpc.WithTransportCredentials(insecure.NewCredentials())) // Use WithTransportCredentials for production
 	if err != nil {
 		log.Fatal("did not connect to mail gRPC service: ", err)
 	}
-	defer mailGrpcConn.Close()
 
 	// Use in service if needed
 	// lock, err := locking.NewRedisLocker(cfg.RedisAddr, cfg.RedisPassword, 1, baseLogger)
 	// if err != nil {
 	// 	log.Fatal("Failed to connect redis for locking: ", err)
 	// }
-	// defer lock.Close()
+	// defer lock.Close() Do it in goroutine
 
 	externalApiClient := api_clients.NewApiClient("ExternalService", baseLogger)
 
 	// To use the API-based mail client instead of gRPC, uncomment the following line and comment out the gRPC one above:
 	// mailClient := api_clients.NewApiMailClient("http://localhost:8081/send-mail")
 	mailClient := grpc_clients.NewGrpcMailClient(mailGrpcConn)
+
+	// Jobqueue
+	jobQueue, err := queue.NewRabbitMQJobQueue(cfg.RabbitMQURL, baseLogger)
+	if err != nil {
+		log.Fatalf("Failed to connect to RabbitMQ: %v", err)
+	}
 
 	ctxTimeout := 60 * time.Second
 
@@ -131,6 +135,7 @@ func main() {
 		PostRepository: postRepo,
 		UserRepository: userRepo,
 		Cache:          cache,
+		JobQueue:       jobQueue,
 		CtxTimeout:     ctxTimeout,
 	}
 
@@ -212,6 +217,12 @@ func main() {
 		},
 		"cache": func(ctx context.Context) error {
 			return cache.Close()
+		},
+		"grpc": func(ctx context.Context) error {
+			return mailGrpcConn.Close()
+		},
+		"rabbitmq": func(ctx context.Context) error {
+			return jobQueue.Close()
 		},
 	})
 
