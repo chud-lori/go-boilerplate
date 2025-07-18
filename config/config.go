@@ -22,6 +22,7 @@ type AppConfig struct {
 	Version       string
 	JwtSecret     string
 	MailServer    string
+	RabbitMQURL   string
 }
 
 func LoadConfig() (*AppConfig, error) {
@@ -81,6 +82,11 @@ func LoadConfig() (*AppConfig, error) {
 	// Version
 	cfg.Version = "1.0.0"
 	cfg.JwtSecret = os.Getenv("JWT_SECRET")
+
+	cfg.RabbitMQURL = os.Getenv("RABBITMQ_URL")
+	if cfg.RabbitMQURL == "" {
+		cfg.RabbitMQURL = "amqp://guest:guest@localhost:5672/"
+	}
 
 	return cfg, nil
 }
