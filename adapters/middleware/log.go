@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt" // Import fmt for Sprintf
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
