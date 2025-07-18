@@ -31,14 +31,14 @@ func (lrw *loggingTraffic) WriteHeader(code int) {
 	lrw.ResponseWriter.WriteHeader(code)
 }
 
-// func (lrw *loggingTraffic) Flush() {
-// 	if flusher, ok := lrw.ResponseWriter.(http.Flusher); ok {
-// 		flusher.Flush()
-// 	}
-// 	// If the underlying ResponseWriter is not a Flusher, we can't flush,
-// 	// but we don't want to panic or error here, just don't flush.
-// 	// This might happen with certain HTTP servers or proxy setups.
-// }
+func (lrw *loggingTraffic) Flush() {
+	if flusher, ok := lrw.ResponseWriter.(http.Flusher); ok {
+		flusher.Flush()
+	}
+	// If the underlying ResponseWriter is not a Flusher, we can't flush,
+	// but we don't want to panic or error here, just don't flush.
+	// This might happen with certain HTTP servers or proxy setups.
+}
 
 var sensitivePayloadKeys = map[string]struct{}{
 	"password":        {},
