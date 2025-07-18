@@ -23,6 +23,9 @@ RUN go build -o bin/api-service ./cmd/api
 # This assumes your main function for the gRPC server is in cmd/grpcserver/main.go
 RUN go build -o bin/grpc-server ./cmd/grpcserver
 
+# Build upload worker/consumer binary
+RUN go build -o bin/upload-consumer ./cmd/upload_consumer
+
 # Production stage
 FROM alpine:latest
 
@@ -31,4 +34,5 @@ WORKDIR /app
 # Just copy the built binaries and env file
 COPY --from=builder /app/bin/api-service ./api-service
 COPY --from=builder /app/bin/grpc-server ./grpc-server
+COPY --from=builder /app/bin/upload-consumer ./upload-consumer
 COPY --from=builder /app/.env .
