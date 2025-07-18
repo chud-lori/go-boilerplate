@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -565,4 +566,244 @@ func TestPostController_GetAll_ServiceError(t *testing.T) {
 	assert.Nil(t, response.Data)
 
 	mockService.AssertExpectations(t)
+}
+func TestPostController_UploadAttachment_Success(t *testing.T) {
+	mockService := new(mocks.MockPostService)
+	controller := &controllers.PostController{
+		PostService: mockService,
+	}
+
+	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
+
+	// Prepare multipart form data
+	var buf bytes.Buffer
+	w := multipart.NewWriter(&buf)
+	fw, _ := w.CreateFormFile("file", "file.txt")
+	fw.Write([]byte("filedata"))
+	w.WriteField("file_name", "file.txt")
+	w.WriteField("file_type", "text/plain")
+	w.Close()
+
+	postID := uuid.New()
+	url := "/post/" + postID.String() + "/upload"
+	req := httptest.NewRequest(http.MethodPost, url, &buf)
+	req.Header.Set("Content-Type", w.FormDataContentType())
+	req = req.WithContext(ctx)
+	rec := httptest.NewRecorder()
+
+	mockService.On("StartAsyncUpload", mock.Anything, postID, "file.txt", "text/plain", mock.AnythingOfType("[]uint8")).Return(uuid.New(), nil)
+
+	controller.UploadAttachment(rec, req)
+	assert.Equal(t, http.StatusAccepted, rec.Code)
+	var response dto.WebResponse
+	err := json.Unmarshal(rec.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "Upload started", response.Message)
+	assert.Equal(t, 1, response.Status)
+	assert.NotNil(t, response.Data)
+	mockService.AssertExpectations(t)
+}
+
+func TestPostController_UploadAttachment_InvalidPostID(t *testing.T) {
+	mockService := new(mocks.MockPostService)
+	controller := &controllers.PostController{
+		PostService: mockService,
+	}
+
+	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
+
+	var buf bytes.Buffer
+	w := multipart.NewWriter(&buf)
+	fw, _ := w.CreateFormFile("file", "file.txt")
+	fw.Write([]byte("filedata"))
+	w.WriteField("file_name", "file.txt")
+	w.WriteField("file_type", "text/plain")
+	w.Close()
+
+	url := "/post/not-a-uuid/upload"
+	req := httptest.NewRequest(http.MethodPost, url, &buf)
+	req.Header.Set("Content-Type", w.FormDataContentType())
+	req = req.WithContext(ctx)
+	rec := httptest.NewRecorder()
+
+	controller.UploadAttachment(rec, req)
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+	var response dto.WebResponse
+	err := json.Unmarshal(rec.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "Invalid post ID", response.Message)
+	assert.Equal(t, 0, response.Status)
+	assert.Nil(t, response.Data)
+}
+
+func TestPostController_UploadAttachment_MissingFile(t *testing.T) {
+	mockService := new(mocks.MockPostService)
+	controller := &controllers.PostController{
+		PostService: mockService,
+	}
+
+	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
+
+	postID := uuid.New()
+	url := "/post/" + postID.String() + "/upload"
+	var buf bytes.Buffer
+	w := multipart.NewWriter(&buf)
+	// No file added
+	w.WriteField("file_name", "file.txt")
+	w.WriteField("file_type", "text/plain")
+	w.Close()
+
+	req := httptest.NewRequest(http.MethodPost, url, &buf)
+	req.Header.Set("Content-Type", w.FormDataContentType())
+	req = req.WithContext(ctx)
+	rec := httptest.NewRecorder()
+
+	controller.UploadAttachment(rec, req)
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+	var response dto.WebResponse
+	err := json.Unmarshal(rec.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "File is required", response.Message)
+	assert.Equal(t, 0, response.Status)
+	assert.Nil(t, response.Data)
+}
+
+func TestPostController_UploadAttachment_ServiceError(t *testing.T) {
+	mockService := new(mocks.MockPostService)
+	controller := &controllers.PostController{
+		PostService: mockService,
+	}
+
+	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
+
+	var buf bytes.Buffer
+	w := multipart.NewWriter(&buf)
+	fw, _ := w.CreateFormFile("file", "file.txt")
+	fw.Write([]byte("filedata"))
+	w.WriteField("file_name", "file.txt")
+	w.WriteField("file_type", "text/plain")
+	w.Close()
+
+	postID := uuid.New()
+	url := "/post/" + postID.String() + "/upload"
+	req := httptest.NewRequest(http.MethodPost, url, &buf)
+	req.Header.Set("Content-Type", w.FormDataContentType())
+	req = req.WithContext(ctx)
+	rec := httptest.NewRecorder()
+
+	mockService.On("StartAsyncUpload", mock.Anything, postID, "file.txt", "text/plain", mock.AnythingOfType("[]uint8")).Return(uuid.Nil, errors.New("service error"))
+
+	controller.UploadAttachment(rec, req)
+	assert.Equal(t, http.StatusInternalServerError, rec.Code)
+	var response dto.WebResponse
+	err := json.Unmarshal(rec.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "Failed to start async upload", response.Message)
+	assert.Equal(t, 0, response.Status)
+	assert.Nil(t, response.Data)
+	mockService.AssertExpectations(t)
+}
+
+func TestPostController_UploadStatusSSE_Success(t *testing.T) {
+	mockService := new(mocks.MockPostService)
+	controller := &controllers.PostController{
+		PostService: mockService,
+	}
+
+	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
+	uploadID := uuid.New()
+
+	req := httptest.NewRequest(http.MethodGet, "/uploads/"+uploadID.String()+"/events", nil)
+	req = req.WithContext(ctx)
+	req.SetPathValue("uploadId", uploadID.String())
+	rec := httptest.NewRecorder()
+
+	// Simulate status progression: uploading -> success
+	mockService.On("GetUploadStatus", mock.Anything, uploadID).Return(entities.UploadStatusUploading, nil).Once()
+	mockService.On("GetUploadStatus", mock.Anything, uploadID).Return(entities.UploadStatusSuccess, nil).Once()
+
+	controller.UploadStatusSSE(rec, req)
+
+	// Check SSE output contains both statuses
+	body := rec.Body.String()
+	assert.Contains(t, body, "data: uploading")
+	assert.Contains(t, body, "data: success")
+
+	mockService.AssertExpectations(t)
+}
+
+func TestPostController_UploadStatusSSE_InvalidUUID(t *testing.T) {
+	mockService := new(mocks.MockPostService)
+	controller := &controllers.PostController{
+		PostService: mockService,
+	}
+
+	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
+	invalidUploadID := "not-a-uuid"
+
+	req := httptest.NewRequest(http.MethodGet, "/uploads/"+invalidUploadID+"/events", nil)
+	req = req.WithContext(ctx)
+	req.SetPathValue("uploadId", invalidUploadID)
+	rec := httptest.NewRecorder()
+
+	controller.UploadStatusSSE(rec, req)
+
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+	var response dto.WebResponse
+	err := json.Unmarshal(rec.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "invalid uploadId format", response.Message)
+	assert.Equal(t, 0, response.Status)
+	assert.Nil(t, response.Data)
+}
+
+func TestPostController_UploadStatusSSE_MissingUploadID(t *testing.T) {
+	mockService := new(mocks.MockPostService)
+	controller := &controllers.PostController{
+		PostService: mockService,
+	}
+
+	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
+
+	req := httptest.NewRequest(http.MethodGet, "/uploads//events", nil)
+	req = req.WithContext(ctx)
+	req.SetPathValue("uploadId", "")
+	rec := httptest.NewRecorder()
+
+	controller.UploadStatusSSE(rec, req)
+
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+	var response dto.WebResponse
+	err := json.Unmarshal(rec.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "uploadId required", response.Message)
+	assert.Equal(t, 0, response.Status)
+	assert.Nil(t, response.Data)
+}
+
+func TestPostController_UploadStatusSSE_ServiceError(t *testing.T) {
+	mockService := new(mocks.MockPostService)
+	controller := &controllers.PostController{
+		PostService: mockService,
+	}
+
+	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
+	uploadID := uuid.New()
+
+	req := httptest.NewRequest(http.MethodGet, "/uploads/"+uploadID.String()+"/events", nil)
+	req = req.WithContext(ctx)
+	req.SetPathValue("uploadId", uploadID.String())
+	rec := httptest.NewRecorder()
+
+	mockService.On("GetUploadStatus", mock.Anything, uploadID).Return(entities.UploadStatusFailed, errors.New("service error")).Once()
+
+	controller.UploadStatusSSE(rec, req)
+
+	assert.Equal(t, http.StatusInternalServerError, rec.Code)
+	var response dto.WebResponse
+	err := json.Unmarshal(rec.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "Failed to get upload status", response.Message)
+	assert.Equal(t, 0, response.Status)
+	assert.Nil(t, response.Data)
 }
