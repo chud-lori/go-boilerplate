@@ -37,10 +37,13 @@ func NewUploadJobHandler(deps UploadHandlerDeps, logger *logrus.Entry) UploadJob
 			logger = logger.WithField("request_id", job.RequestID)
 		}
 		statusKey := "upload_status:" + job.UploadID
+		// simulate delay
+		time.Sleep(5 * time.Second)
 
 		deps.RedisCache.Set(ctx, statusKey, []byte(string(entities.UploadStatusUploading)), time.Hour)
 		logger.Printf("[Worker] Processing upload for post %s, file %s", job.PostID, job.FileName)
 
+		time.Sleep(2 * time.Second)
 		url, err := deps.Uploader.Upload(ctx, job.FileName, job.FileData)
 
 		if err != nil {
@@ -49,6 +52,7 @@ func NewUploadJobHandler(deps UploadHandlerDeps, logger *logrus.Entry) UploadJob
 			return nil
 		}
 
+		time.Sleep(2 * time.Second)
 		deps.RedisCache.Set(ctx, statusKey, []byte(string(entities.UploadStatusSuccess)), time.Hour)
 		logger.Infof("[Worker] Upload successful: %s", url)
 		return nil
