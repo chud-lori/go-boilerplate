@@ -23,6 +23,7 @@ func AuthRouter(controller *controllers.AuthController, serve *http.ServeMux) {
 }
 
 func PostRouter(controller *controllers.PostController, serve *http.ServeMux, tokenManager ports.TokenManager, logger *logrus.Logger) {
+	// Protected endpoints
 	createHandler := middleware.JWTMiddleware(http.HandlerFunc(controller.Create), tokenManager, logger)
 	serve.Handle("POST /post", createHandler)
 
@@ -32,6 +33,11 @@ func PostRouter(controller *controllers.PostController, serve *http.ServeMux, to
 	deleteHandler := middleware.JWTMiddleware(http.HandlerFunc(controller.Delete), tokenManager, logger)
 	serve.Handle("DELETE /post/{postId}", deleteHandler)
 
+	uploadHandler := middleware.JWTMiddleware(http.HandlerFunc(controller.UploadAttachment), tokenManager, logger)
+	serve.Handle("POST /post/{postId}/upload", uploadHandler)
+
+	// Public endpoints
 	serve.HandleFunc("GET /post/{postId}", controller.GetById)
 	serve.HandleFunc("GET /post", controller.GetAll)
+	serve.HandleFunc("GET /uploads/{uploadId}/events", controller.UploadStatusSSE)
 }

@@ -5,12 +5,11 @@ import (
 
 	"time"
 
-	"encoding/json"
-
 	"github.com/chud-lori/go-boilerplate/domain/entities"
 	"github.com/chud-lori/go-boilerplate/domain/ports"
 	appErrors "github.com/chud-lori/go-boilerplate/pkg/errors"
 	"github.com/chud-lori/go-boilerplate/pkg/logger"
+	baseLogger "github.com/chud-lori/go-boilerplate/pkg/logger"
 	"github.com/sirupsen/logrus"
 )
 
@@ -65,32 +64,37 @@ func (s *AuthServiceImpl) SignIn(c context.Context, user *entities.User) (*entit
 
 	// Disable throwing error, as this dummy
 	// External API call POST dummy
-	auditPayload := map[string]interface{}{
-		"user_id": foundUser.ID.String(),
-		"event":   "sign_in",
-		"time":    time.Now().Format(time.RFC3339),
-	}
-	body, _ := json.Marshal(auditPayload)
-	postResp, errApi := s.ExternalApi.DoRequest(ctx, "POST", "https://dummy-external-api.local/audit", map[string]string{"Content-Type": "application/json"}, body)
-	if errApi != nil {
-		logger.WithError(errApi).Warn("Failed to notify external audit API (POST)")
-	} else {
-		logger.Infof("POST external API response: %s", string(postResp))
-	}
+	// auditPayload := map[string]interface{}{
+	// 	"user_id": foundUser.ID.String(),
+	// 	"event":   "sign_in",
+	// 	"time":    time.Now().Format(time.RFC3339),
+	// }
+	// body, _ := json.Marshal(auditPayload)
+	// postResp, errApi := s.ExternalApi.DoRequest(ctx, "POST", "https://dummy-external-api.local/audit", map[string]string{"Content-Type": "application/json"}, body)
+	// if errApi != nil {
+	// 	logger.WithError(errApi).Warn("Failed to notify external audit API (POST)")
+	// } else {
+	// 	logger.Infof("POST external API response: %s", string(postResp))
+	// }
 
-	// External API call GET dummy
-	getResp, errApi := s.ExternalApi.DoRequest(ctx, "GET", "https://dummy-external-api.local/userinfo?id="+foundUser.ID.String(), nil, nil)
-	if err != nil {
-		logger.WithError(errApi).Warn("Failed to get user info from external API (GET)")
-	} else {
-		logger.Infof("GET external API response: %s", string(getResp))
-	}
+	// // External API call GET dummy
+	// getResp, errApi := s.ExternalApi.DoRequest(ctx, "GET", "https://dummy-external-api.local/userinfo?id="+foundUser.ID.String(), nil, nil)
+	// if err != nil {
+	// 	logger.WithError(errApi).Warn("Failed to get user info from external API (GET)")
+	// } else {
+	// 	logger.Infof("GET external API response: %s", string(getResp))
+	// }
 
-	// Disable throwing error, as this mail service is optional
-	errMail := s.MailService.SendSignInNotification(ctx, foundUser.Email, "User logged in just now")
-	if errMail != nil {
-		logger.WithError(errMail).Error("Failed to send mail")
-	}
+	go func() {
+		backgroundCtx := context.Background()
+
+		backgroundCtx = context.WithValue(backgroundCtx, baseLogger.LoggerContextKey, logger)
+
+		err := s.MailService.SendSignInNotification(backgroundCtx, foundUser.Email, "User logged in just now")
+		if err != nil {
+			logger.WithError(err).Error("Failed to send mail")
+		}
+	}()
 
 	return foundUser, token, err
 }

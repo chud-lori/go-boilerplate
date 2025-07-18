@@ -318,6 +318,61 @@ paths:
       summary: Get a post by ID
       tags:
       - Posts
+  /post/{postId}/upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Uploads a file to a post asynchronously, returning an upload_id
+        for status tracking.
+      parameters:
+      - description: Post ID
+        in: path
+        name: postId
+        required: true
+        type: string
+      - description: File to upload
+        in: formData
+        name: file
+        required: true
+        type: file
+      - description: File name
+        in: formData
+        name: file_name
+        required: true
+        type: string
+      - description: File type
+        in: formData
+        name: file_type
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted, returns upload_id
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.WebResponse'
+            - properties:
+                data:
+                  additionalProperties:
+                    type: string
+                  type: object
+              type: object
+        "400":
+          description: Bad request or validation error
+          schema:
+            $ref: '#/definitions/dto.WebResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.WebResponse'
+      security:
+      - ApiKeyAuth: []
+      - BearerAuth: []
+      summary: Upload a file/image/video to a post (async)
+      tags:
+      - Posts
   /signin:
     post:
       consumes:
@@ -387,6 +442,37 @@ paths:
       summary: Sign up a new user
       tags:
       - Auth
+  /uploads/{uploadId}/events:
+    get:
+      description: Streams the status of an asynchronous post upload using Server-Sent
+        Events (SSE).
+      operationId: upload-status-sse
+      parameters:
+      - description: Upload ID to track status
+        in: path
+        name: uploadId
+        required: true
+        type: string
+      produces:
+      - text/event-stream
+      responses:
+        "200":
+          description: SSE stream with upload status updates
+          schema:
+            type: string
+        "400":
+          description: Invalid uploadId format or missing
+          schema:
+            $ref: '#/definitions/dto.WebResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.WebResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get upload status via SSE
+      tags:
+      - Posts
   /user:
     get:
       description: Retrieves a list of all users.

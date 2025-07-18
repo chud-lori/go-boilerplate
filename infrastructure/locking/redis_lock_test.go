@@ -20,9 +20,8 @@ func TestRedisLocker(t *testing.T) {
 	assert.NoError(t, err)
 	defer redisC.Terminate(ctx)
 
-	// Create a new logger instance for the locker
 	logger := logrus.New()
-	logger.SetLevel(logrus.DebugLevel) // Set to DebugLevel to see Acquire/Release logs
+	logger.SetLevel(logrus.DebugLevel)
 
 	// Initialize the RedisLocker
 	locker, err := locking.NewRedisLocker(addr, "", 0, logger)

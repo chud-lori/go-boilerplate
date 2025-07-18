@@ -154,5 +154,43 @@ services:
     networks:
       - service-network
 
+  service-rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    labels:
+      logging: "service-promtail"
+      logging_jobname: "rabbitmq-log"
+    container_name: service-rabbitmq
+    ports:
+      - 5672:5672 # AMQP
+      - 15672:15672 # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_PASS: password
+    networks:
+      - service-network
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  upload-consumer:
+    build:
+      context: .
+    labels:
+      logging: "service-promtail"
+      logging_jobname: "upload-consumer-log"
+    container_name: service-upload-consumer
+    command: ["./upload-consumer"]
+    env_file:
+      - .env.docker
+    depends_on:
+      service-rabbitmq:
+        condition: service_healthy
+      service-redis:
+        condition: service_healthy
+    networks:
+      - service-network
+
 volumes:
   postgres_data:
