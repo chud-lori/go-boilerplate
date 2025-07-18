@@ -1115,3 +1115,26 @@ func TestPostService_GetAll_CacheSetError(t *testing.T) {
 	mockPostRepo.AssertExpectations(t)
 	mockTx.AssertExpectations(t)
 }
+
+func TestStartAsyncUpload_PublishesJobWithRequestID(t *testing.T) {
+	mq := new(mocks.MockJobQueue)
+	cache := new(mocks.MockCache)
+	svc := &services.PostServiceImpl{
+		JobQueue: mq,
+		Cache:    cache,
+	}
+	ctx := context.WithValue(context.Background(), "request_id", "req-123")
+	postID := uuid.New()
+	fileName := "file.txt"
+	fileType := "text/plain"
+	fileData := []byte("data")
+
+	mq.On("PublishJob", ctx, "post_upload_queue", mock.AnythingOfType("[]uint8")).Return(nil)
+	cache.On("Set", ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	uploadID, err := svc.StartAsyncUpload(ctx, postID, fileName, fileType, fileData)
+	assert.NoError(t, err)
+	assert.NotEqual(t, uuid.Nil, uploadID)
+	mq.AssertExpectations(t)
+	cache.AssertExpectations(t)
+}
