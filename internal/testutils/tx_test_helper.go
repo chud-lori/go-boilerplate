@@ -18,14 +18,16 @@ func WithTransactionTest[T any](
 	setupRepo func(db ports.Database) (T, error),
 	testFunc func(ctx context.Context, repo T, tx ports.Transaction),
 ) {
-	db, terminate := SetupTestDBWithTestcontainers(t)
-	t.Cleanup(terminate)
+    // Use shared PostgreSQL container to avoid per-test container spin-up
+    sharedDB, err := OpenSharedPostgres()
+    require.NoError(t, err)
+    t.Cleanup(func() { sharedDB.Close() })
 
 	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.New())
-	tx, err := db.BeginTx(ctx)
+    tx, err := sharedDB.BeginTx(ctx)
 	require.NoError(t, err)
 
-	repo, err := setupRepo(db)
+    repo, err := setupRepo(sharedDB)
 	require.NoError(t, err)
 
 	testFunc(ctx, repo, tx)

@@ -24,6 +24,7 @@ type PostServiceImpl struct {
 	ports.PostRepository
 	ports.UserRepository
 	ports.Cache
+	JobQueue ports.JobQueue // Injected dependency
 	CtxTimeout time.Duration
 }
 
@@ -247,4 +248,51 @@ func (s *PostServiceImpl) GetAll(c context.Context, search string, page, limit i
 	}
 
 	return posts, nil
+}
+
+// StartAsyncUpload begins an async upload for a post attachment, returning an upload ID for tracking.
+func (s *PostServiceImpl) StartAsyncUpload(ctx context.Context, postID uuid.UUID, fileName, fileType string, fileData []byte) (uploadID uuid.UUID, err error) {
+	uploadID = uuid.New()
+	requestID, _ := ctx.Value("request_id").(string) // or use your logger's key
+	job := struct {
+		UploadID  string `json:"upload_id"`
+		PostID    string `json:"post_id"`
+		FileName  string `json:"file_name"`
+		FileType  string `json:"file_type"`
+		FileData  []byte `json:"file_data"`
+		RequestID string `json:"request_id"`
+	}{
+		UploadID:  uploadID.String(),
+		PostID:    postID.String(),
+		FileName:  fileName,
+		FileType:  fileType,
+		FileData:  fileData,
+		RequestID: requestID,
+	}
+	payload, err := json.Marshal(job)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	// Publish to job queue (e.g., RabbitMQ)
+	if s.JobQueue == nil {
+		return uuid.Nil, errors.New("job queue not available in service")
+	}
+	err = s.JobQueue.PublishJob(ctx, "post_upload_queue", payload)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	// Set initial status in cache
+	statusKey := "upload_status:" + uploadID.String()
+	s.Cache.Set(ctx, statusKey, []byte(string(entities.UploadStatusPending)), time.Hour)
+	return uploadID, nil
+}
+
+// GetUploadStatus returns the current status of an async upload by upload ID.
+func (s *PostServiceImpl) GetUploadStatus(ctx context.Context, uploadID uuid.UUID) (entities.UploadStatus, error) {
+	statusKey := "upload_status:" + uploadID.String()
+	status, err := s.Cache.Get(ctx, statusKey)
+	if err != nil {
+		return "", err
+	}
+	return entities.UploadStatus(status), nil
 }

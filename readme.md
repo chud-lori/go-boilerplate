@@ -26,6 +26,8 @@ A modern, production-ready Go boilerplate for building scalable web APIs and mic
 - **Dockerized**: Dockerfile and docker-compose.yml for local development and deployment.
 - **Observability**: Loki/Promtail/Grafana stack for log aggregation and visualization.
 - **Swagger Docs**: Built-in support for Swagger API documentation with [Swag CLI](https://github.com/swaggo/swag).
+- **Asynchronous Processing (RabbitMQ)**: Decoupled background job processing for tasks like file uploads, using RabbitMQ and a JobQueue abstraction.
+- **Server-Sent Events (SSE)**: Real-time streaming of async job status (e.g., upload progress) to clients via SSE endpoints.
 
 ---
 
@@ -38,12 +40,13 @@ A modern, production-ready Go boilerplate for building scalable web APIs and mic
 │   ├── repositories/          # DB implementation of domain repositories
 │   └── web/                   # Web utilities including DTOs and helpers
 │       ├── dto/               # Request/response DTO structs
-│       ├── helper/            # Helper functions for the web layer
+│       ├── helper/            # Helper functions for the web layer (includes SSE helpers)
 │       └── routes.go          # HTTP route registration
 │
 ├── cmd/                      # Application entry points
 │   ├── api/                   # Main REST API entry point
-│   └── grpcserver/            # Main gRPC mail server entry point
+│   ├── grpcserver/            # Main gRPC mail server entry point
+│   └── upload_consumer/        # Background worker for async uploads (RabbitMQ consumer)
 │
 ├── config/                   # Application configuration loading and parsing
 │
@@ -60,6 +63,7 @@ A modern, production-ready Go boilerplate for building scalable web APIs and mic
 │   ├── datastore/             # PostgreSQL DB setup and connection logic
 │   ├── grpc_clients/          # gRPC clients used by the application
 │   └── locking/               # Pessimistic locking using redis
+│   └── queue/                # RabbitMQ job queue implementation
 │
 ├── internal/                 # Internal packages
 │   ├── testutils/             # Helpers and setup for tests
@@ -164,8 +168,69 @@ The Auth service will connect to this address to send mail.
 
 ---
 
+### ⚡️ Running the Upload Consumer (Async Worker)
 
-### 🐳 Running with Docker
+> **Note:** The upload consumer service processes background jobs (e.g., file uploads) from RabbitMQ. You must start the upload consumer for async uploads to work.
+
+#### 1. Start the Upload Consumer
+
+Run the consumer using this command:
+
+```sh
+go run cmd/upload_consumer/main.go
+```
+
+Or, using Makefile (if available):
+
+```sh
+make run-upload-consumer
+```
+
+#### 2. Confirm the consumer is running
+
+The upload consumer will listen for jobs on RabbitMQ and update upload statuses in Redis.
+
+---
+
+## ⚡️ Asynchronous Processing (RabbitMQ)
+
+This boilerplate supports asynchronous/background job processing using RabbitMQ. This is useful for tasks like file uploads, notifications, or any long-running process that should not block API requests.
+
+- **Abstraction**: The `JobQueue` interface (`domain/ports/job_queue.go`) allows for easy swapping of queue backends.
+- **Implementation**: `infrastructure/queue/rabbitmq.go` provides a RabbitMQ-based implementation.
+- **Worker**: The `cmd/upload_consumer/` service consumes jobs from RabbitMQ and processes uploads in the background.
+- **Usage Example**: When a user uploads a file to a post, the API enqueues the upload job and returns an `upload_id` immediately. The upload is processed asynchronously.
+
+---
+
+## 📡 Real-Time Status with Server-Sent Events (SSE)
+
+The boilerplate exposes an SSE endpoint to stream the status of asynchronous jobs (such as file uploads) to clients in real time.
+
+- **SSE Helper**: `adapters/web/helper/sse.go` provides a reusable SSE handler.
+- **Endpoint**: `GET /api/uploads/{uploadId}/events` streams status updates for a given upload.
+- **How it works**: The client subscribes to this endpoint using EventSource or similar, and receives status updates (e.g., `pending`, `uploading`, `success`, `failed`).
+
+**Example Usage:**
+
+1. **Start an async upload:**
+    ```http
+    POST /api/post/{postId}/upload
+    Content-Type: multipart/form-data
+    ...
+    -> Response: { "upload_id": "..." }
+    ```
+2. **Subscribe to status updates:**
+    ```js
+    const source = new EventSource('/api/uploads/{upload_id}/events');
+    source.onmessage = (event) => {
+      console.log('Upload status:', event.data); // e.g., 'pending', 'uploading', 'success', 'failed'
+    };
+    ```
+
+---
+
+## 🐳 Running with Docker
 
 1. **Create Docker environment file**
 
@@ -181,6 +246,7 @@ PSQL_USER=postgres
 PSQL_PASSWORD=root
 DATABASE_URL=postgres://postgres:root@service-postgres:5432/service_db?sslmode=disable
 REDIS_URL=redis://service-redis:6379
+RABBITMQ_URL=amqp://user:password@service-rabbitmq:5672/
 ```
 
 3. **Start containers**
@@ -191,6 +257,13 @@ docker-compose up --build
 
 > 📝 `.env.docker` will be used by `docker-compose.yml` via the `env_file` section.
 > The app will treat it as `.env` at runtime.
+> The following services will be started:
+> - API server
+> - gRPC mail server
+> - Redis
+> - PostgreSQL
+> - RabbitMQ (with management UI at [http://localhost:15672](http://localhost:15672), default user: `user`, password: `password`)
+> - Upload consumer (background worker for async jobs)
 
 ---
 
@@ -219,71 +292,4 @@ This boilerplate includes a k6 script for load testing the REST API endpoints. T
     * Creating a new post (`POST /api/post`)
     * Fetching posts twice (`GET /api/post`)
 
-    Adjust the `vus` (Virtual Users) and `duration` in `loadtest.js` to simulate different load scenarios.
-
----
-
-## 🔁 Caching (Redis)
-
-- **Redis** is integrated via the `Cache` interface (`domain/ports/cache.go`)
-- **Usage**:
-    - Cache values with `Set`, retrieve with `Get`, delete with `Delete`
-    - Used in services for cache-first logic (e.g., `GetAll()` → check cache → fallback to DB)
-- **Implementation**: `infrastructure/cache/redis_cache.go`
-- **Tested via**: [testcontainers-go](https://github.com/testcontainers/testcontainers-go)
-
----
-
-## ⚡ Circuit Breaker Pattern
-
-This boilerplate implements the Circuit Breaker pattern using [gobreaker](https://github.com/sony/gobreaker) to handle external service failures gracefully.
-
-### Implementation
-
-- **API Mail Client** (`infrastructure/api_clients/mail_api.go`): HTTP-based mail service with circuit breaker
-- **gRPC Mail Client** (`infrastructure/grpc_clients/mail_grpc.go`): gRPC-based mail service with circuit breaker
-
-### Configuration
-
-Both clients use the same circuit breaker settings:
-- **MaxRequests**: 3 (number of test requests in half-open state)
-- **Interval**: 60 seconds (time window for counting failures)
-- **Timeout**: 10 seconds (time to wait before transitioning from open to half-open)
-
-### States
-
-1. **Closed**: Normal operation, requests pass through
-2. **Open**: Service is failing, requests are rejected immediately
-3. **Half-Open**: Testing if service has recovered, limited requests allowed
-
-### Benefits
-
-- **Fault Tolerance**: Prevents cascading failures when external services are down
-- **Fast Failure**: Quick response when services are unavailable
-- **Automatic Recovery**: Self-healing when external services come back online
-- **Resource Protection**: Prevents resource exhaustion during outages
-
----
-
-## 📊 Logging & Observability
-
-- **Structured Logging**: Logrus used for consistent, leveled logs
-- **Grafana + Loki + Promtail** stack:
-    - Access Grafana at: [http://localhost:3000](http://localhost:3000)
-    - Logs shipped by Promtail and stored by Loki
-    - Configured in `promtail.yml` and `grafana-datasources.yml`
-
----
-
-## 🧱 Extending
-
-- Add new entities in `domain/entities/` and update related ports/services
-- Add repositories in `adapters/repositories/`
-- Add gRPC services to `proto/`, regenerate stubs using `protoc`
-- Add middleware in `adapters/middleware/`
-
----
-
-## 🪪 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+    Adjust the `vus`
