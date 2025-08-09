@@ -16,12 +16,11 @@ import (
 func TestRedisCache(t *testing.T) {
 	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
 
-	// Start Redis container
-	redisC, addr, err := testutils.SetupRedisContainer(ctx)
-	assert.NoError(t, err)
-	defer redisC.Terminate(ctx)
+    // Use shared Redis container
+    addr, err := testutils.GetRedisAddr()
+    assert.NoError(t, err)
 
-	logger := logrus.New()
+    logger := logrus.New()
 
 	cache, err := cache.NewRedisCache(addr, "", 0, logger)
 	assert.NoError(t, err)

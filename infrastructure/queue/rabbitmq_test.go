@@ -1,18 +1,17 @@
 package queue_test
 
 import (
-	"context"
-	"encoding/json"
-	"testing"
-	"time"
+    "context"
+    "encoding/json"
+    "testing"
+    "time"
 
-	"github.com/chud-lori/go-boilerplate/domain/entities"
-	"github.com/chud-lori/go-boilerplate/infrastructure/queue"
-	"github.com/google/uuid"
-	"github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/assert"
-	"github.com/testcontainers/testcontainers-go"
-	"github.com/testcontainers/testcontainers-go/wait"
+    "github.com/chud-lori/go-boilerplate/domain/entities"
+    "github.com/chud-lori/go-boilerplate/infrastructure/queue"
+    "github.com/chud-lori/go-boilerplate/internal/testutils"
+    "github.com/google/uuid"
+    "github.com/sirupsen/logrus"
+    "github.com/stretchr/testify/assert"
 )
 
 func TestUploadJobMessage_MarshalUnmarshal(t *testing.T) {
@@ -91,25 +90,9 @@ func TestConsumeJobs_ValidAndInvalidPayload(t *testing.T) {
 func TestRabbitMQ_PublishConsume_Integration(t *testing.T) {
 	ctx := context.Background()
 
-	// Start RabbitMQ container
-	req := testcontainers.ContainerRequest{
-		Image:        "rabbitmq:3.12-management-alpine",
-		ExposedPorts: []string{"5672/tcp"},
-		WaitingFor:   wait.ForLog("Server startup complete"),
-	}
-	rmqC, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
-		ContainerRequest: req,
-		Started:          true,
-	})
-	assert.NoError(t, err)
-	defer rmqC.Terminate(ctx)
-
-	host, err := rmqC.Host(ctx)
-	assert.NoError(t, err)
-	port, err := rmqC.MappedPort(ctx, "5672")
-	assert.NoError(t, err)
-
-	amqpURL := "amqp://guest:guest@" + host + ":" + port.Port() + "/"
+    // Use shared RabbitMQ container
+    amqpURL, err := testutils.GetRabbitURL()
+    assert.NoError(t, err)
 	logger := logrus.New()
 	logger.SetLevel(logrus.DebugLevel)
 

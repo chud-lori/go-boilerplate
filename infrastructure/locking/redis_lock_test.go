@@ -13,12 +13,9 @@ import (
 )
 
 func TestRedisLocker(t *testing.T) {
-	ctx := context.Background() // Use plain context.Background for tests unless specific context needed for logs
-
-	// Start Redis container
-	redisC, addr, err := testutils.SetupRedisContainer(ctx)
-	assert.NoError(t, err)
-	defer redisC.Terminate(ctx)
+    // Use shared Redis container
+    addr, err := testutils.GetRedisAddr()
+    assert.NoError(t, err)
 
 	logger := logrus.New()
 	logger.SetLevel(logrus.DebugLevel)
