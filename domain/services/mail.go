@@ -20,6 +20,7 @@ func (s *MailServiceImpl) SendSignInNotification(ctx context.Context, email, tex
 		logger.WithError(err).Error("Error send notif")
 		return err
 	}
+	logger.Info("Success SENT MAILLL")
 
 	return nil
 }

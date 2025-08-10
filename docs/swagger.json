@@ -330,6 +330,94 @@
                 }
             }
         },
+        "/post/{postId}/upload": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Uploads a file to a post asynchronously, returning an upload_id for status tracking.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Posts"
+                ],
+                "summary": "Upload a file/image/video to a post (async)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Post ID",
+                        "name": "postId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "File to upload",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "File name",
+                        "name": "file_name",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "File type",
+                        "name": "file_type",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted, returns upload_id",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/dto.WebResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "additionalProperties": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request or validation error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.WebResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.WebResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/signin": {
             "post": {
                 "security": [
@@ -439,6 +527,53 @@
                     },
                     "400": {
                         "description": "Invalid request payload or failed to sign up",
+                        "schema": {
+                            "$ref": "#/definitions/dto.WebResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/uploads/{uploadId}/events": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Streams the status of an asynchronous post upload using Server-Sent Events (SSE).",
+                "produces": [
+                    "text/event-stream"
+                ],
+                "tags": [
+                    "Posts"
+                ],
+                "summary": "Get upload status via SSE",
+                "operationId": "upload-status-sse",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Upload ID to track status",
+                        "name": "uploadId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "SSE stream with upload status updates",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid uploadId format or missing",
+                        "schema": {
+                            "$ref": "#/definitions/dto.WebResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
                         "schema": {
                             "$ref": "#/definitions/dto.WebResponse"
                         }

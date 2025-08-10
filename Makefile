@@ -25,7 +25,7 @@ migration-reset:
 
 test:
 	@echo "Running tests..."
-	@go test ./... -v -cover
+	@go test ./... -v -cover -parallel=4
 	@echo "Tests passed."
 
 deps:
@@ -53,6 +53,10 @@ swagger:
 # ====== GRPC ======
 run-grpc:
 	@go run ./cmd/grpcserver/main.go
+
+# ====== UPLOAD CONSUMER ======
+run-upload-consumer:
+	@go run ./cmd/upload_consumer/main.go
 
 # ====== DOCKER COMMANDS ======
 
@@ -93,6 +97,7 @@ help:
 	@echo "  make clean      Remove built binaries"
 	@echo "  make swagger    Generate Swagger documentation"
 	@echo "  make run-grpc   Run gRPC Server"
+	@echo "  make run-upload-consumer   Run Upload Consumer (async worker)"
 	@echo ""
 	@echo "Migration targets:"
 	@echo "  make migration-create name=your_migration_name   Create a new migration file"
@@ -108,4 +113,4 @@ help:
 
 .PHONY: all test deps build swagger run clean help run-grpc \
         docker-build docker-test up down rebuild migration-create \
-		migration-up migration-down
+		migration-up migration-down run-upload-consumer

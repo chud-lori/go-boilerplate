@@ -18,6 +18,7 @@ import (
 )
 
 func TestPostRepository_Save(t *testing.T) {
+    t.Parallel()
 	testutils.WithTransactionTest(t,
 		func(db ports.Database) (ports.PostRepository, error) {
 			return &repositories.PostRepositoryPostgre{}, nil
@@ -49,6 +50,7 @@ func TestPostRepository_Save(t *testing.T) {
 }
 
 func TestPostRepository_Update(t *testing.T) {
+    t.Parallel()
 	testutils.WithTransactionTest(t,
 		func(db ports.Database) (ports.PostRepository, error) {
 			return &repositories.PostRepositoryPostgre{}, nil
@@ -102,6 +104,7 @@ func TestPostRepository_Update(t *testing.T) {
 }
 
 func TestPostRepository_Update_NotFound(t *testing.T) {
+    t.Parallel()
 	testutils.WithTransactionTest(t,
 		func(db ports.Database) (ports.PostRepository, error) {
 			return &repositories.PostRepositoryPostgre{}, nil
@@ -125,6 +128,7 @@ func TestPostRepository_Update_NotFound(t *testing.T) {
 }
 
 func TestPostRepository_Delete(t *testing.T) {
+    t.Parallel()
 	testutils.WithTransactionTest(t,
 		func(db ports.Database) (ports.PostRepository, error) {
 			return &repositories.PostRepositoryPostgre{}, nil
@@ -162,6 +166,7 @@ func TestPostRepository_Delete(t *testing.T) {
 }
 
 func TestPostRepository_Delete_NotFound(t *testing.T) {
+    t.Parallel()
 	testutils.WithTransactionTest(t,
 		func(db ports.Database) (ports.PostRepository, error) {
 			return &repositories.PostRepositoryPostgre{}, nil
@@ -176,6 +181,7 @@ func TestPostRepository_Delete_NotFound(t *testing.T) {
 }
 
 func TestPostRepository_GetById(t *testing.T) {
+    t.Parallel()
 	testutils.WithTransactionTest(t,
 		func(db ports.Database) (ports.PostRepository, error) {
 			return &repositories.PostRepositoryPostgre{}, nil
@@ -213,6 +219,7 @@ func TestPostRepository_GetById(t *testing.T) {
 }
 
 func TestPostRepository_GetById_NotFound(t *testing.T) {
+    t.Parallel()
 	testutils.WithTransactionTest(t,
 		func(db ports.Database) (ports.PostRepository, error) {
 			return &repositories.PostRepositoryPostgre{}, nil
@@ -228,6 +235,7 @@ func TestPostRepository_GetById_NotFound(t *testing.T) {
 }
 
 func TestPostRepository_GetAll(t *testing.T) {
+    t.Parallel()
 	testutils.WithTransactionTest(t,
 		func(db ports.Database) (ports.PostRepository, error) {
 			return &repositories.PostRepositoryPostgre{}, nil
@@ -317,6 +325,7 @@ func TestPostRepository_GetAll(t *testing.T) {
 }
 
 func TestPostRepository_GetAll_NoRecords(t *testing.T) {
+    t.Parallel()
 	testutils.WithTransactionTest(t,
 		func(db ports.Database) (ports.PostRepository, error) {
 			return &repositories.PostRepositoryPostgre{}, nil

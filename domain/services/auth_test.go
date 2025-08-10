@@ -48,9 +48,22 @@ func TestAuthService_SignIn_Success(t *testing.T) {
 	mockToken.On("GenerateToken", mockUser.ID.String()).Return("generatedtoken", nil)
 	mockTx.On("Commit").Return(nil)
 	mockApi.On("DoRequest", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return([]byte(`{"result":"ok"}`), nil)
-	mockMailSrv.On("SendSignInNotification", mock.Anything, foundUser.Email, "User logged in just now").Return(nil)
+
+	// Use a channel to wait for goroutine
+	done := make(chan struct{})
+	mockMailSrv.On("SendSignInNotification", mock.Anything, foundUser.Email, "User logged in just now").
+		Run(func(args mock.Arguments) {
+			close(done)
+		}).Return(nil)
 
 	_, token, err := service.SignIn(ctx, mockUser)
+
+	// Wait for goroutine to finish
+	select {
+	case <-done:
+	case <-time.After(1 * time.Second):
+		t.Fatal("MailService goroutine did not finish")
+	}
 
 	assert.NoError(t, err)
 	assert.Equal(t, "generatedtoken", token)

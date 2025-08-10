@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/chud-lori/go-boilerplate/adapters/web/dto"
 	"github.com/chud-lori/go-boilerplate/adapters/web/helper"
@@ -18,6 +19,7 @@ import (
 
 type PostController struct {
 	ports.PostService
+	// Removed: JobQueue ports.JobQueue
 }
 
 // CreatePost godoc
@@ -396,4 +398,171 @@ func (c *PostController) GetAll(w http.ResponseWriter, r *http.Request) {
 	}
 
 	helper.WriteResponse(w, resp, http.StatusOK)
+}
+
+// UploadAttachment handles async file/image/video upload for a post.
+// @Summary Upload a file/image/video to a post (async)
+// @Description Uploads a file to a post asynchronously, returning an upload_id for status tracking.
+// @Tags Posts
+// @Accept multipart/form-data
+// @Produce json
+// @Param postId path string true "Post ID"
+// @Param file formData file true "File to upload"
+// @Param file_name formData string true "File name"
+// @Param file_type formData string true "File type"
+// @Success 202 {object} dto.WebResponse{data=map[string]string} "Accepted, returns upload_id"
+// @Failure 400 {object} dto.WebResponse "Bad request or validation error"
+// @Failure 500 {object} dto.WebResponse "Internal server error"
+// @Router /post/{postId}/upload [post]
+// @Security ApiKeyAuth
+// @Security BearerAuth
+func (c *PostController) UploadAttachment(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	logger := ctx.Value(logger.LoggerContextKey).(*logrus.Entry)
+
+	if c.PostService == nil { // Changed from JobQueue to PostService
+		helper.WriteResponse(w, dto.WebResponse{
+			Message: "Post service not available",
+			Status:  0,
+			Data:    nil,
+		}, http.StatusInternalServerError)
+		return
+	}
+
+	postIDStr := strings.TrimPrefix(r.URL.Path, "/post/")
+	postIDStr = strings.Split(postIDStr, "/")[0]
+	postID, err := uuid.Parse(postIDStr)
+	if err != nil {
+		helper.WriteResponse(w, dto.WebResponse{
+			Message: "Invalid post ID",
+			Status:  0,
+			Data:    nil,
+		}, http.StatusBadRequest)
+		return
+	}
+
+	err = r.ParseMultipartForm(32 << 20) // 32MB max memory
+	if err != nil {
+		helper.WriteResponse(w, dto.WebResponse{
+			Message: "Failed to parse multipart form",
+			Status:  0,
+			Data:    nil,
+		}, http.StatusBadRequest)
+		return
+	}
+
+	file, handler, err := r.FormFile("file")
+	if err != nil {
+		helper.WriteResponse(w, dto.WebResponse{
+			Message: "File is required",
+			Status:  0,
+			Data:    nil,
+		}, http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	fileName := r.FormValue("file_name")
+	fileType := r.FormValue("file_type")
+	if fileName == "" {
+		fileName = handler.Filename
+	}
+	if fileType == "" {
+		fileType = handler.Header.Get("Content-Type")
+	}
+
+	fileData := make([]byte, handler.Size)
+	_, err = file.Read(fileData)
+	if err != nil {
+		helper.WriteResponse(w, dto.WebResponse{
+			Message: "Failed to read file data",
+			Status:  0,
+			Data:    nil,
+		}, http.StatusBadRequest)
+		return
+	}
+
+	uploadID, err := c.PostService.StartAsyncUpload(ctx, postID, fileName, fileType, fileData) // Changed from JobQueue to PostService
+	if err != nil {
+		logger.WithError(err).Error("Failed to start async upload")
+		helper.WriteResponse(w, dto.WebResponse{
+			Message: "Failed to start async upload",
+			Status:  0,
+			Data:    nil,
+		}, http.StatusInternalServerError)
+		return
+	}
+
+	helper.WriteResponse(w, dto.WebResponse{
+		Message: "Upload started",
+		Status:  1,
+		Data: map[string]string{
+			"upload_id": uploadID.String(),
+		},
+	}, http.StatusAccepted)
+}
+
+// UploadStatusSSE godoc
+// @Summary Get upload status via SSE
+// @Description Streams the status of an asynchronous post upload using Server-Sent Events (SSE).
+// @ID upload-status-sse
+// @Tags Posts
+// @Produce text/event-stream
+// @Param uploadId path string true "Upload ID to track status"
+// @Success 200 {string} string "SSE stream with upload status updates"
+// @Failure 400 {object} dto.WebResponse "Invalid uploadId format or missing"
+// @Failure 500 {object} dto.WebResponse "Internal server error"
+// @Router /uploads/{uploadId}/events [get]
+// @Security ApiKeyAuth
+func (c *PostController) UploadStatusSSE(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	// logger := ctx.Value(logger.LoggerContextKey).(*logrus.Entry)
+	uploadID := r.PathValue("uploadId")
+	if uploadID == "" {
+		helper.WriteResponse(w, dto.WebResponse{
+			Message: "uploadId required",
+			Status:  0,
+			Data:    nil,
+		}, http.StatusBadRequest)
+		return
+	}
+	uuidVal, err := uuid.Parse(uploadID)
+	if err != nil {
+		helper.WriteResponse(w, dto.WebResponse{
+			Message: "invalid uploadId format",
+			Status:  0,
+			Data:    nil,
+		}, http.StatusBadRequest)
+		return
+	}
+	helper.SSEHandler(func(w http.ResponseWriter, r *http.Request) {
+		// ctx := r.Context()
+		lastStatus := ""
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				status, err := c.PostService.GetUploadStatus(ctx, uuidVal)
+				if err != nil {
+					helper.WriteResponse(w, dto.WebResponse{
+						Message: "Failed to get upload status",
+						Status:  0,
+						Data:    nil,
+					}, http.StatusInternalServerError)
+					return
+				}
+
+				if string(status) != lastStatus {
+					lastStatus = string(status)
+					w.Write([]byte("data: " + lastStatus + "\n\n"))
+					w.(http.Flusher).Flush()
+					if status == entities.UploadStatusSuccess || status == entities.UploadStatusFailed {
+						return
+					}
+				}
+				time.Sleep(1 * time.Second)
+			}
+		}
+	})(w, r)
 }
