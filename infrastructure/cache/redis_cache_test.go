@@ -14,6 +14,7 @@ import (
 )
 
 func TestRedisCache(t *testing.T) {
+    t.Parallel()
 	ctx := context.WithValue(context.Background(), logger.LoggerContextKey, logrus.NewEntry(logrus.New()))
 
     // Use shared Redis container

@@ -25,7 +25,7 @@ migration-reset:
 
 test:
 	@echo "Running tests..."
-	@go test ./... -v -cover
+	@go test ./... -v -cover -parallel=4
 	@echo "Tests passed."
 
 deps:

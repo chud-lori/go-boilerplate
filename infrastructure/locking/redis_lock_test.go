@@ -13,6 +13,7 @@ import (
 )
 
 func TestRedisLocker(t *testing.T) {
+    t.Parallel()
     // Use shared Redis container
     addr, err := testutils.GetRedisAddr()
     assert.NoError(t, err)

@@ -88,6 +88,7 @@ func TestConsumeJobs_ValidAndInvalidPayload(t *testing.T) {
 }
 
 func TestRabbitMQ_PublishConsume_Integration(t *testing.T) {
+    t.Parallel()
 	ctx := context.Background()
 
     // Use shared RabbitMQ container
@@ -96,8 +97,8 @@ func TestRabbitMQ_PublishConsume_Integration(t *testing.T) {
 	logger := logrus.New()
 	logger.SetLevel(logrus.DebugLevel)
 
-	// Give RabbitMQ a moment to be ready
-	time.Sleep(2 * time.Second)
+    // Give a brief moment for the consumer to attach before publishing
+    time.Sleep(250 * time.Millisecond)
 
 	jobQueue, err := queue.NewRabbitMQJobQueue(amqpURL, logger)
 	assert.NoError(t, err)
